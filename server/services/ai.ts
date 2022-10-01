@@ -1065,6 +1065,10 @@ export default class AIService {
     }
 
     _isEnemyPlayer(player: Player, diplomacy: DiplomacyState, otherPlayer: Player): boolean {
+        if (player._id.toString() === otherPlayer._id.toString()) {
+            return false;
+        }
+
         return diplomacy.hostilePlayers.has(otherPlayer._id)
             || this.reputationService.getReputation(player, otherPlayer).reputation.score < NEUTRAL_PLAYER_MIN_REPUTATION;
     }
