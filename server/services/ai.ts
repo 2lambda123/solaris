@@ -524,11 +524,6 @@ export default class AIService {
             }
         }
 
-        console.log("Border stars:");
-        borderStars.forEach((_, starId) => {
-            console.log(starsById.get(starId)!.name);
-        });
-
         return borderStars;
     }
 
