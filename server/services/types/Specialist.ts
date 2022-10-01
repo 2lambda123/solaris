@@ -20,6 +20,13 @@ export interface Specialist {
             scanning?: number;
             manufacturing?: number;
             terraforming?: number;
+            carrierToCarrierCombat?: {
+                weapons?: number;
+            },
+            carrierToStarCombat?: {
+                weapons?: number;
+                weaponsPerAlly?: number;
+            }
         },
         special?: {
             hideShips?: boolean;
@@ -41,13 +48,7 @@ export interface Specialist {
             creditsPerTickByScience?: number;
             autoCarrierSpecialistAssign?: number;
             combatSwapWeaponsTechnology?: boolean;
-            defenderBonus: number;
-        },
-        carrierToCarrierCombat?: {
-            weapons: number;
-        },
-        carrierToStarCombat?: {
-            weapons: number;
+            defenderBonus?: number;
         }
     }
 };

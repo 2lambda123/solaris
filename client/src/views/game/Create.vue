@@ -43,6 +43,13 @@
               {{ opt }}% of <span v-if="settings.conquest.victoryCondition === 'homeStarPercentage'">Capital</span> Stars
             </option>
           </select>
+
+          <label for="conquestCapitalStarElimination" class="col-form-label">Capital Star Elimination <help-tooltip tooltip="Determines whether players become defeated if they lose control of their capital star"/></label>
+          <select class="form-control" id="conquestCapitalStarElimination" v-model="settings.conquest.capitalStarElimination" :disabled="isCreatingGame">
+            <option v-for="opt in options.conquest.capitalStarElimination" v-bind:key="opt.value" v-bind:value="opt.value">
+              {{ opt.text }}
+            </option>
+          </select>
         </div>
 
         <div class="mb-2" v-if="settings.general.mode === 'kingOfTheHill'">
@@ -323,6 +330,16 @@
           <div class="col">
             <input type="range" min="0" max="50" step="1" class="form-range w-100" id="randomBlackHoles" v-model="settings.specialGalaxy.randomBlackHoles" :disabled="isCreatingGame">
           </div>
+        </div>
+
+        <div class="mb-2" v-if="settings.galaxy.galaxyType !== 'custom'">
+          <label for="randomPulsars" class="col-form-label">Random Pulsars (<span class="text-warning">{{settings.specialGalaxy.randomPulsars}}%</span>) <help-tooltip tooltip="The percentage of random pulsars are generated in the galaxy - Pulsars are always visible to all players in the game"/></label>
+          <div class="col">
+            <input type="range" min="0" max="50" step="1" class="form-range w-100" id="randomPulsars" v-model="settings.specialGalaxy.randomPulsars" :disabled="isCreatingGame">
+          </div>
+        </div>
+
+        <div class="mb-2" v-if="settings.galaxy.galaxyType !== 'custom'">
 
           <div class="mb-2">
             <label for="darkGalaxy" class="col-form-label">Dark Galaxy <help-tooltip tooltip="Dark galaxies hide stars outside of player scanning ranges - Extra dark galaxies hide player statistics so that players only know what other players have based on what they can see in their scanning range"/></label>
@@ -399,6 +416,8 @@
       </view-collapse-panel>
 
       <view-collapse-panel title="Orbital Mechanics">
+        <p class="mb-1 text-warning" v-if="settings.orbitalMechanics.enabled === 'enabled'">Warning: carrier-to-carrier combat is auto-disabled in orbital games.</p>
+        
         <div class="mb-2">
           <label for="orbitalMechanicsEnabled" class="col-form-label">Galaxy Rotation <help-tooltip tooltip="If enabled, orbits stars and carriers around the center of the galaxy every tick"/></label>
           <select class="form-control" id="orbitalMechanicsEnabled" v-model="settings.orbitalMechanics.enabled" :disabled="isCreatingGame">

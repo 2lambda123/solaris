@@ -1,5 +1,6 @@
 import { CarrierWaypointActionType } from "./CarrierWaypoint";
 import { DBObjectId } from "./DBObjectId";
+import { UserLevel } from "./UserLevel";
 
 export type SettingEnabledDisabled = 'enabled'|'disabled';
 export type SettingUIType = 'standard'|'compact';
@@ -38,6 +39,7 @@ export interface UserSubscriptions {
     discord?: {
         gameStarted: boolean;
         gameEnded: boolean;
+        gameTurnEnded: boolean;
         playerGalacticCycleComplete: boolean;
         playerResearchComplete: boolean;
         playerTechnologyReceived: boolean;
@@ -65,8 +67,11 @@ export interface User {
     isEstablishedPlayer: boolean;
     hasSentReviewReminder: boolean;
     roles: UserRoles,
+    level?: UserLevel,
     achievements: {
         victories: number;
+        victories1v1: number;
+        level: number;
         rank: number;
         eloRating: number | null;
         renown: number;
@@ -74,6 +79,7 @@ export interface User {
         completed: number;
         quit: number;
         defeated: number;
+        defeated1v1: number;
         afk: number;
         combat: {
             kills: {
@@ -133,6 +139,17 @@ export interface User {
             roleplay: number;
             dauntless: number;
             sleepless: number;
+            victor32: number;
+            special_dark: number;
+            special_ultraDark: number;
+            special_orbital: number;
+            special_battleRoyale: number;
+            special_homeStar: number;
+            special_homeStarElimination: number;
+            special_anonymous: number;
+            special_kingOfTheHill: number;
+            special_tinyGalaxy: number;
+            special_freeForAll: number;
         }
     },
     gameSettings: {

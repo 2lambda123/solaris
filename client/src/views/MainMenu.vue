@@ -9,7 +9,11 @@
       </div>
       <div class="col-sm-12 col-md-6 col-lg-7">
         <!-- player quick stats -->
-        <achievements v-if="achievements" v-bind:victories="achievements.victories" v-bind:rank="achievements.rank" v-bind:renown="achievements.renown"/>
+        <achievements v-if="achievements"
+          :level="achievements.level"
+          :victories="achievements.victories"
+          :rank="achievements.rank"
+          :renown="achievements.renown"/>
         <loading-spinner :loading="!achievements"></loading-spinner>
       </div>
     </div>
@@ -148,6 +152,7 @@ export default {
       this.$store.commit('clearUsername')
       this.$store.commit('clearRoles')
       this.$store.commit('clearUserCredits')
+      this.$store.commit('clearUserIsEstablishedPlayer')
 
       this.isLoggingOut = false
 
@@ -161,6 +166,7 @@ export default {
         this.achievements = response.data.achievements
 
         this.$store.commit('setUserCredits', response.data.credits)
+        this.$store.commit('setUserIsEstablishedPlayer', response.data.isEstablishedPlayer)
       } catch (err) {
         console.error(err)
       }

@@ -29,9 +29,11 @@ const schema = new Schema({
 				'special_orbital',
 				'special_battleRoyale',
 				'special_homeStar',
+				'special_homeStarElimination',
 				'special_anonymous',
 				'special_kingOfTheHill',
-				'special_tinyGalaxy'
+				'special_tinyGalaxy',
+				'special_freeForAll'
 			], default: 'custom' },
 			mode: { type: Types.String, required: true, enum: [
 				'conquest', 'battleRoyale', 'kingOfTheHill'
@@ -51,7 +53,7 @@ const schema = new Schema({
         galaxy: {
 			galaxyType: { type: Types.String, required: true, enum: ['circular', 'spiral', 'doughnut','circular-balanced', 'irregular', 'custom'], default: 'circular' },
 			starsPerPlayer: { type: Types.Number, required: true, min: 3, max: 50, default: 20 },
-			productionTicks: { type: Types.Number, required: true, min: 10, max: 36, default: 24 }
+			productionTicks: { type: Types.Number, required: true, min: 6, max: 36, default: 24 }
         },
         specialGalaxy: {
 			carrierCost: { type: Types.String, required: true, enum: ['cheap', 'standard', 'expensive'], default: 'standard' },
@@ -65,6 +67,7 @@ const schema = new Schema({
 			randomAsteroidFields: { type: Types.Number, min: 0, max: 50, default: 0 },
 			randomBinaryStars: { type: Types.Number, min: 0, max: 50, default: 0 },
 			randomBlackHoles: { type: Types.Number, min: 0, max: 50, default: 0 },
+			randomPulsars: { type: Types.Number, min: 0, max: 50, default: 0 },
 			darkGalaxy: { type: Types.String, required: true, enum: ['disabled', 'standard', 'extra', 'start'], default: 'start' },
 			giftCarriers: { type: Types.String, required: true, enum: ['disabled', 'enabled'], default: 'enabled' },
 			defenderBonus: { type: Types.String, required: true, enum: ['disabled', 'enabled'], default: 'enabled' },
@@ -81,6 +84,7 @@ const schema = new Schema({
 		conquest: {
 			victoryCondition: { type: Types.String, required: true, enum: ['starPercentage', 'homeStarPercentage'], default: 'starPercentage' },
 			victoryPercentage: { type: Types.Number, required: true, enum: [25, 33, 50, 66, 75, 90, 100], default: 50 },
+			capitalStarElimination: { type: Types.String, required: true, enum: ['enabled', 'disabled'], default: 'disabled' }
 		},
 		kingOfTheHill: {
 			productionCycles: { type: Types.Number, required: false, min: 1, max: 25, default: 10 }
@@ -176,6 +180,7 @@ const schema = new Schema({
 		players: { type: Types.Number, required: true, default: 0 },
 		winner: { type: Types.ObjectId, required: false, default: null },
 		cleaned: { type: Types.Boolean, required: false, default: false }, // Represents if the events and history have been deleted.
+		leaderboard: [{ type: Types.ObjectId, required: false }]
 	},
 	constants: {
 		distances: {

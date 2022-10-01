@@ -27,6 +27,12 @@
             :value="game.settings.conquest.victoryPercentage"
             :compareValue="compareSettings.conquest.victoryPercentage"
             v-if="game.settings.general.mode === 'conquest'"/>
+          <game-setting-value title="Capital Star Elimination"
+            tooltip="Determines whether players become defeated if they lose control of their capital star"
+            :valueText="getFriendlyText(game.settings.conquest.capitalStarElimination)"
+            :value="game.settings.conquest.capitalStarElimination"
+            :compareValue="compareSettings.conquest.capitalStarElimination"
+            v-if="game.settings.general.mode === 'conquest'"/>
           <game-setting-value title="Countdown Cycles"
             tooltip="How long the countdown is to the end of the game in production cycles when the center star is captured"
             :valueText="game.settings.kingOfTheHill.productionCycles"
@@ -220,6 +226,12 @@
             :valueText="getFriendlyText(game.settings.specialGalaxy.randomBlackHoles)+'%'"
             :value="game.settings.specialGalaxy.randomBlackHoles"
             :compareValue="compareSettings.specialGalaxy.randomBlackHoles"
+            v-if="game.settings.galaxy.galaxyType !== 'custom'"/>
+          <game-setting-value title="Random Pulsars"
+            tooltip="The percentage of random pulsars are generated in the galaxy - Pulsars are always visible to all players in the game"
+            :valueText="getFriendlyText(game.settings.specialGalaxy.randomPulsars)+'%'"
+            :value="game.settings.specialGalaxy.randomPulsars"
+            :compareValue="compareSettings.specialGalaxy.randomPulsars"
             v-if="game.settings.galaxy.galaxyType !== 'custom'"/>
           <game-setting-value title="Dark Galaxy"
             tooltip="Dark galaxies hide stars outside of player scanning ranges - Extra dark galaxies hide player statistics so that players only know what other players have based on what they can see in their scanning range"

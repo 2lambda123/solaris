@@ -39,6 +39,7 @@ import StarMovementService from "../starMovement";
 import PasswordService from "../password";
 import PaypalService from "../paypal";
 import PlayerService from "../player";
+import PlayerAfkService from '../playerAfk'
 import PlayerCreditsService from "../playerCredits";
 import PlayerCycleRewardsService from "../playerCycleRewards";
 import PlayerReadyService from "../playerReady";
@@ -64,6 +65,8 @@ import WaypointService from "../waypoint";
 import NotificationService from "../notification";
 import DiscordService from "../discord";
 import BasicAIService from "../basicAi";
+import UserLevelService from "../userLevel";
+import SpecialStarBanService from "../specialStarBan";
 
 export interface DependencyContainer {
     config: Config,
@@ -91,6 +94,8 @@ export interface DependencyContainer {
     guildUserService: UserGuildService,
     mapService: MapService,
     playerService: PlayerService,
+    playerAfkService: PlayerAfkService,
+    userLevelService: UserLevelService,
     playerReadyService: PlayerReadyService,
     randomService: RandomService,
     researchService: ResearchService,
@@ -108,10 +113,10 @@ export interface DependencyContainer {
     specialistService: SpecialistService,
     specialistBanService: SpecialistBanService,
     specialistHireService: SpecialistHireService,
+    specialStarBanService: SpecialStarBanService;
     achievementService: AchievementService,
     conversationService: ConversationService,
     reputationService: ReputationService,
-    basicAiService: BasicAIService,
     aiService: AIService,
     battleRoyaleService: BattleRoyaleService,
     starMovementService: StarMovementService,

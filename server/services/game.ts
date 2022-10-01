@@ -1,5 +1,4 @@
 const EventEmitter = require('events');
-const moment = require('moment');
 import { DBObjectId } from './types/DBObjectId';
 import ValidationError from '../errors/validation';
 import Repository from './repository';
@@ -16,10 +15,14 @@ import StarService from './star';
 import UserService from './user';
 import ConversationService from './conversation';
 import PlayerReadyService from './playerReady';
-import GamePlayerJoinedEvent from './types/events/GamePlayerJoined'
 import GamePlayerQuitEvent from './types/events/GamePlayerQuit';
 import GamePlayerDefeatedEvent from './types/events/GamePlayerDefeated';
-import { BaseGameEvent } from './types/events/BaseGameEvent';
+
+export const GameServiceEvents = {
+    onPlayerQuit: 'onPlayerQuit',
+    onPlayerDefeated: 'onPlayerDefeated',
+    onGameDeleted: 'onGameDeleted'
+}
 
 export default class GameService extends EventEmitter {
     gameRepo: Repository<Game>;
@@ -167,7 +170,7 @@ export default class GameService extends EventEmitter {
             playerAlias: alias
         };
 
-        this.emit('onPlayerQuit', e);
+        this.emit(GameServiceEvents.onPlayerQuit, e);
 
         return player;
     }
@@ -220,7 +223,7 @@ export default class GameService extends EventEmitter {
             openSlot
         };
 
-        this.emit('onPlayerDefeated', e);
+        this.emit(GameServiceEvents.onPlayerDefeated, e);
     }
 
     async delete(game: Game, deletedByUserId?: DBObjectId) {
@@ -248,7 +251,7 @@ export default class GameService extends EventEmitter {
             _id: game._id 
         });
 
-        this.emit('onGameDeleted', {
+        this.emit(GameServiceEvents.onGameDeleted, {
             gameId: game._id
         });
 
@@ -263,6 +266,7 @@ export default class GameService extends EventEmitter {
         let player = game.galaxy.players.find(p => p._id.toString() === playerId.toString())!;
 
         return await this.userService.getInfoByIdLean(player.userId!, {
+            'achievements.level': 1,
             'achievements.rank': 1,
             'achievements.renown': 1,
             'achievements.victories': 1,

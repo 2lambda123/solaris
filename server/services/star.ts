@@ -6,7 +6,7 @@ import Repository from './repository';
 import { Carrier } from './types/Carrier';
 import { Game, GameSettings } from './types/Game';
 import { Location } from './types/Location';
-import { MapObject } from './types/Map';
+import { MapObject, MapObjectWithVisibility } from './types/Map';
 import { Player } from './types/Player';
 import { InfrastructureType, NaturalResources, Star, StarCaptureResult, TerraformedResources } from './types/Star';
 import { User } from './types/User';
@@ -19,6 +19,12 @@ import SpecialistService from './specialist';
 import StarDistanceService from './starDistance';
 import TechnologyService from './technology';
 import UserService from './user';
+
+export const StarServiceEvents = {
+    onPlayerStarAbandoned: 'onPlayerStarAbandoned',
+    onPlayerStarDied: 'onPlayerStarDied',
+    onPlayerStarReignited: 'onPlayerStarReignited'
+}
 
 export default class StarService extends EventEmitter {
 
@@ -92,6 +98,7 @@ export default class StarService extends EventEmitter {
         isAsteroidField: star.isAsteroidField,
         isBinaryStar: star.isBinaryStar,
         isBlackHole: star.isBlackHole,
+        isPulsar: star.isPulsar,
         wormHoleToStarId: star.wormHoleToStarId,
         specialistId: star.specialistId
       }
@@ -213,6 +220,12 @@ export default class StarService extends EventEmitter {
     }
 
     isStarWithinScanningRangeOfStars(game: Game, star: Star, stars: Star[]) {
+        // Pulsars are considered to be always in scanning range.
+        // Note: They are not visible until the game starts to prevent pre-teaming.
+        if (star.isPulsar && this.gameStateService.isStarted(game)) {
+            return true;
+        }
+
         // Go through all of the stars one by one and calculate
         // whether any one of them is within scanning range.
         for (let otherStar of stars) {
@@ -240,7 +253,7 @@ export default class StarService extends EventEmitter {
         let starsWithScanning = starsOwnedOrInOrbit.filter(s => !this.isDeadStar(s));
 
         // Seed the stars that are in range to be the stars owned or are in orbit of.
-        let starsInRange: MapObject[] = starsOwnedOrInOrbit.map(s => {
+        let starsInRange: MapObjectWithVisibility[] = starsOwnedOrInOrbit.map(s => {
             return {
                 _id: s._id,
                 location: s.location,
@@ -249,13 +262,14 @@ export default class StarService extends EventEmitter {
         });
 
         // Calculate which stars need to be checked excluding the ones that the player can definitely see.
-        let starsToCheck: MapObject[] = game.galaxy.stars
+        let starsToCheck: MapObjectWithVisibility[] = game.galaxy.stars
             .filter(s => starsInRange.find(r => r._id.toString() === s._id.toString()) == null)
             .map(s => {
                 return {
                     _id: s._id,
                     location: s.location,
-                    ownedByPlayerId: s.ownedByPlayerId
+                    ownedByPlayerId: s.ownedByPlayerId,
+                    isAlwaysVisible: s.isPulsar
                 }
             });
 
@@ -321,7 +335,7 @@ export default class StarService extends EventEmitter {
         return starsInScanningRange;
     }
 
-    getStarsWithinScanningRangeOfStarByStarIds(game: Game, star: Star, stars: MapObject[]) {
+    getStarsWithinScanningRangeOfStarByStarIds(game: Game, star: Star, stars: MapObjectWithVisibility[]) {
         // If the star isn't owned then it cannot have a scanning range
         if (star.ownedByPlayerId == null) {
             return [];
@@ -333,7 +347,7 @@ export default class StarService extends EventEmitter {
 
         // Go through all stars and find each star that is in scanning range.
         let starsInRange = stars.filter(s => {
-            return this.starDistanceService.getDistanceBetweenStars(s, star) <= scanningRangeDistance;
+            return s.isAlwaysVisible || this.starDistanceService.getDistanceBetweenStars(s, star) <= scanningRangeDistance;
         });
 
         return starsInRange;
@@ -394,7 +408,7 @@ export default class StarService extends EventEmitter {
 
         await game.save();
 
-        this.emit('onPlayerStarAbandoned', {
+        this.emit(StarServiceEvents.onPlayerStarAbandoned, {
             gameId: game._id,
             gameTick: game.state.tick,
             player,
@@ -428,7 +442,7 @@ export default class StarService extends EventEmitter {
 
             // If the star has a hideShips spec and is not owned by the given player
             // then that player cannot see the carrier's ships.
-            if (specialist.modifiers.special && specialist.modifiers.special.hideShips) {
+            if (specialist && specialist.modifiers.special && specialist.modifiers.special.hideShips) {
                 return false;
             }
         }
@@ -472,7 +486,7 @@ export default class StarService extends EventEmitter {
                 if (star.specialistId) {
                     let specialist = this.specialistService.getByIdStar(star.specialistId);
 
-                    if (specialist.modifiers.special) {
+                    if (specialist && specialist.modifiers.special) {
                         if (specialist.modifiers.special.addNaturalResourcesOnTick) {
                             this.addNaturalResources(game, star, specialist.modifiers.special.addNaturalResourcesOnTick);
                         }
@@ -523,7 +537,7 @@ export default class StarService extends EventEmitter {
             star.infrastructure.science = 0;
 
             if (star.ownedByPlayerId) {
-                this.emit('onPlayerStarDied', {
+                this.emit(StarServiceEvents.onPlayerStarDied, {
                     gameId: game._id,
                     gameTick: game.state.tick,
                     playerId: star.ownedByPlayerId,
@@ -534,7 +548,7 @@ export default class StarService extends EventEmitter {
         }
         // If it was a dead star but is now not a dead star then it has been reignited.
         else if (wasDeadStar && star.ownedByPlayerId) {
-            this.emit('onPlayerStarReignited', {
+            this.emit(StarServiceEvents.onPlayerStarReignited, {
                 gameId: game._id,
                 gameTick: game.state.tick,
                 playerId: star.ownedByPlayerId,
@@ -552,7 +566,7 @@ export default class StarService extends EventEmitter {
         star.naturalResources = naturalResources;
 
         if (star.ownedByPlayerId) {
-            this.emit('onPlayerStarReignited', {
+            this.emit(StarServiceEvents.onPlayerStarReignited, {
                 gameId: game._id,
                 gameTick: game.state.tick,
                 playerId: star.ownedByPlayerId,

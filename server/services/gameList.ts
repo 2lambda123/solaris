@@ -33,6 +33,27 @@ export default class GameListService {
         this.leaderboardService = leaderboardService;
     }
 
+    async listJoinableGames() {
+        const games = await this.gameRepo.find({
+            'state.startDate': { $eq: null },
+            'settings.general.type': { $ne: 'tutorial' }
+        }, {
+            'settings.general.type': 1,
+            'settings.general.featured': 1,
+            'settings.general.name': 1,
+            'settings.general.playerLimit': 1,
+            state: 1
+        });
+
+        const official = games.filter(g => g.settings.general.type !== 'custom');
+        const custom = games.filter(g => g.settings.general.type === 'custom');
+
+        return {
+            official,
+            custom
+        };
+    }
+
     async listOfficialGames() {
         return await this.gameRepo.find({
             'settings.general.type': { $nin: ['custom', 'tutorial'] },
@@ -46,19 +67,17 @@ export default class GameListService {
         });
     }
 
-    async listCustomGames(select?) {
-        select = select || {
+    async listCustomGames() {
+        return await this.gameRepo.find({
+            'settings.general.type': { $eq: 'custom' },
+            'state.startDate': { $eq: null }
+        }, {
             'settings.general.type': 1,
             'settings.general.featured': 1,
             'settings.general.name': 1,
             'settings.general.playerLimit': 1,
             state: 1
-        };
-
-        return await this.gameRepo.find({
-            'settings.general.type': { $eq: 'custom' },
-            'state.startDate': { $eq: null }
-        }, select);
+        });
     }
 
     async listActiveGames(userId: DBObjectId) {
@@ -82,8 +101,6 @@ export default class GameListService {
             'galaxy.players.ready': 1,
             'galaxy.players.defeated': 1,
             'galaxy.players.afk': 1,
-            'galaxy.stars': 1,
-            'galaxy.carriers': 1,
             'conversations.participants': 1,
             'conversations.messages.readBy': 1,
             state: 1
@@ -101,20 +118,18 @@ export default class GameListService {
         }));
     }
 
-    async listRecentlyCompletedGames(select: any | null = null, limit: number = 20) {
-        select = select || {
+    async listRecentlyCompletedGames(limit: number = 20) {
+        return await this.gameRepo.find({
+            'state.endDate': { $ne: null }, // Game is finished
+            'settings.general.type': { $ne: 'tutorial'}
+        },
+        {
             'settings.general.type': 1,
             'settings.general.featured': 1,
             'settings.general.name': 1,
             'settings.general.playerLimit': 1,
             state: 1
-        };
-
-        return await this.gameRepo.find({
-            'state.endDate': { $ne: null }, // Game is finished
-            'settings.general.type': { $ne: 'tutorial'}
         },
-        select,
         { 'state.endDate': -1 },
         limit);
     }
@@ -129,8 +144,18 @@ export default class GameListService {
                 { 'afkers': { $in: [userId] } }
             ]
         }, {
-            'settings': 1,
-            'galaxy': 1,
+            'settings.general.name': 1,
+            'settings.general.type': 1,
+            'settings.general.playerLimit': 1,
+            'settings.gametime.speed': 1,
+            'settings.gametime.gameType': 1,
+            'settings.gameTime': 1,
+            'settings.galaxy.productionTicks': 1,
+            'galaxy.players._id': 1,
+            'galaxy.players.userId': 1,
+            'galaxy.players.ready': 1,
+            'galaxy.players.defeated': 1,
+            'galaxy.players.afk': 1,
             'conversations.participants': 1,
             'conversations.messages.readBy': 1,
             state: 1
@@ -170,7 +195,6 @@ export default class GameListService {
 
             totalUnread = (unreadConversations || 0) + (unreadEvents || 0);
 
-            // TODO: Position should be stored against the game state instead of recalculated every time this function is called.
             if (includePosition) {
                 position = this.leaderboardService.getGameLeaderboardPosition(game, player);
             }
@@ -222,9 +246,11 @@ export default class GameListService {
                     'special_orbital',
                     'special_battleRoyale',
                     'special_homeStar',
+                    'special_homeStarElimination',
                     'special_anonymous',
                     'special_kingOfTheHill',
-                    'special_tinyGalaxy'
+                    'special_tinyGalaxy',
+                    'special_freeForAll'
                 ]
             },
             'state.startDate': { $eq: null }

@@ -19,9 +19,11 @@ export type GameType = 'tutorial'|
 'special_orbital'|
 'special_battleRoyale'|
 'special_homeStar'|
+'special_homeStarElimination' |
 'special_anonymous'|
 'special_kingOfTheHill'|
-'special_tinyGalaxy';
+'special_tinyGalaxy'|
+'special_freeForAll';
 
 export type GameMode = 'conquest'|'battleRoyale'|'kingOfTheHill';
 export type GamePlayerType = 'all'|'establishedPlayers';
@@ -81,7 +83,7 @@ export interface GameSettings {
 		fluxEnabled: GameSettingEnabledDisabled;
 		isGameAdmin?: boolean;
 		advancedAI: GameSettingEnabledDisabled;
-		flux?: GameFlux;
+		flux?: GameFlux | null;
 	},
 	galaxy: {
 		galaxyType: GameGalaxyType;
@@ -101,6 +103,7 @@ export interface GameSettings {
 		randomAsteroidFields: number;
 		randomBlackHoles: number;
 		randomBinaryStars: number;
+		randomPulsars: number;
 		darkGalaxy: GameDarkGalaxyMode;
 		giftCarriers: GameSettingEnabledDisabled;
 		defenderBonus: GameSettingEnabledDisabled;
@@ -117,6 +120,7 @@ export interface GameSettings {
 	conquest: {
 		victoryCondition: GameVictoryCondition;
 		victoryPercentage: GameVictoryPercentage;
+		capitalStarElimination: GameSettingEnabledDisabled;
 	},
 	kingOfTheHill: {
 		productionCycles: number;
@@ -227,6 +231,7 @@ export interface Game {
 		starsForVictory: number;
 		players: number;
 		winner: DBObjectId | null;
+		leaderboard: DBObjectId[] | null;
 		cleaned: boolean;
 		openSlots?: number;
 	},

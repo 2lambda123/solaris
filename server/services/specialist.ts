@@ -5,7 +5,7 @@ import { Star } from "./types/Star";
 import ValidationError from "../errors/validation";
 import GameTypeService from "./gameType";
 
-const specialists = require('../config/game/specialists.json');
+const specialists = require('../config/game/specialists.json') as Specialist[];
 
 export default class SpecialistService {
 
@@ -15,7 +15,7 @@ export default class SpecialistService {
         this.gameTypeService = gameTypeService;
     }
 
-    getById(id: number, type: SpecialistType) {
+    getById(id: number, type: SpecialistType): Specialist {
         return specialists[type].find((x) => x.id === id);
     }
 
@@ -36,7 +36,7 @@ export default class SpecialistService {
                 key: spec.key,
                 name: spec.name,
                 description: spec.description
-            };
+            } as Specialist;
         }
 
         return spec;
@@ -59,22 +59,23 @@ export default class SpecialistService {
                 key: spec.key,
                 name: spec.name,
                 description: spec.description
-            };
+            } as Specialist;
         }
 
         return spec;
     }
 
-    list(game: Game | null, type: SpecialistType) {
-        // Clone the existing list otherwise could run into issues with multiple requests
-        // as the specs are being loaded from a file.
-        let specialistsList = JSON.parse(JSON.stringify(specialists));
-
+    list(game: Game | null, type: SpecialistType): Specialist[] {
         if (game && game.settings.specialGalaxy.specialistCost === 'none') {
             throw new ValidationError('The game settings has disabled the hiring of specialists.');
         }
-        
-        let specs = specialistsList[type];
+
+        // Clone the existing list otherwise could run into issues with multiple requests
+        // as the specs are being loaded from a file.
+        let specialistsList = JSON.parse(JSON.stringify(specialists)) as Specialist[];
+
+        let specs = specialistsList[type]
+            .filter(s => s.active.official || s.active.custom);
 
         // If in the context of a game, filter out specialists that aren't active.
         if (game) {
@@ -97,11 +98,11 @@ export default class SpecialistService {
         return specs.sort((a, b) => a.name - b.name);
     }
 
-    listCarrier(game: Game | null) {
+    listCarrier(game: Game | null): Specialist[] {
         return this.list(game, 'carrier');
     }
 
-    listStar(game: Game | null) {
+    listStar(game: Game | null): Specialist[] {
         return this.list(game, 'star');
     }
 
@@ -126,7 +127,7 @@ export default class SpecialistService {
 
         let specialist = this.getByIdCarrier(carrier.specialistId);
 
-        if (!specialist.modifiers.special) {
+        if (specialist == null || !specialist.modifiers.special) {
             return defaultValue;
         }
 
@@ -142,7 +143,7 @@ export default class SpecialistService {
 
         let specialist = this.getByIdStar(star.specialistId);
 
-        if (!specialist.modifiers.special) {
+        if (specialist == null || !specialist.modifiers.special) {
             return defaultValue;
         }
 

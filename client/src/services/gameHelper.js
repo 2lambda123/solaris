@@ -1023,9 +1023,11 @@ class GameHelper {
       'special_orbital': 'Orbital',
       'special_battleRoyale': 'Battle Royale',
       'special_homeStar': 'Capital Stars',
+      'special_homeStarElimination': 'Elimination',
       'special_anonymous': 'Anonymous',
       'special_kingOfTheHill': 'King Of The Hill',
-      'special_tinyGalaxy': 'Tiny Galaxy'
+      'special_tinyGalaxy': 'Tiny Galaxy',
+      'special_freeForAll': 'Free For All'
     }[game.settings.general.type]
   }
 
@@ -1033,8 +1035,16 @@ class GameHelper {
     return ['new_player_rt', 'new_player_tb'].includes(game.settings.general.type)
   }
 
+  isCustomGame (game) {
+    return game.settings.general.type === 'custom'
+  }
+
   isFluxGame (game) {
     return game.settings.general.fluxEnabled === 'enabled'
+  }
+
+  isFeaturedGame (game) {
+    return game.settings.general.featured === true
   }
 
   getLedgerGameEventPlayerSummary (game, gameEvent) {

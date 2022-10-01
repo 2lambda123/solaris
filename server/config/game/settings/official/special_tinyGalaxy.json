@@ -30,6 +30,7 @@
     "randomAsteroidFields": 10,
     "randomBinaryStars": 10,
     "randomBlackHoles": 5,
+    "randomPulsars": 1,
     "darkGalaxy": "standard",
     "giftCarriers": "enabled",
     "defenderBonus": "enabled",
@@ -45,7 +46,8 @@
   },
   "conquest": {
     "victoryCondition": "starPercentage",
-    "victoryPercentage": 50
+    "victoryPercentage": 50,
+    "capitalStarElimination": "disabled"
   },
   "orbitalMechanics": {
     "enabled": "disabled",
@@ -82,8 +84,8 @@
     "startingTechnologyLevel": {
       "terraforming": 1,
       "experimentation": 1,
-      "scanning": 1,
-      "hyperspace": 1,
+      "scanning": 3,
+      "hyperspace": 2,
       "manufacturing": 1,
       "banking": 1,
       "weapons": 1,

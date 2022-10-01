@@ -513,27 +513,10 @@ export default class PlayerService extends EventEmitter {
         });
     }
 
-    performDefeatedOrAfkCheck(game: Game, player: Player, isTurnBasedGame: boolean) {
-        // Check if the player has been AFK.
-        let isAfk = this.isAfk(game, player, isTurnBasedGame);
+    ownsOriginalHomeStar(game: Game, player: Player) {
+        const stars = this.starService.listStarsOwnedByPlayer(game.galaxy.stars, player._id);
 
-        if (isAfk) {
-            this.setPlayerAsAfk(game, player);
-        }
-
-        // Check if the player has been defeated by conquest.
-        if (!player.defeated) {
-            let stars = this.starService.listStarsOwnedByPlayer(game.galaxy.stars, player._id);
-
-            // If there are no stars and there are no carriers then the player is defeated.
-            if (stars.length === 0) {
-                let carriers = this.carrierService.listCarriersOwnedByPlayer(game.galaxy.carriers, player._id); // Note: This logic looks a bit weird, but its more performant.
-
-                if (carriers.length === 0) {
-                    this.setPlayerAsDefeated(game, player, false);
-                }
-            }
-        }
+        return stars.find(s => s._id.toString() === player.homeStarId!.toString()) != null;
     }
 
     incrementMissedTurns(game: Game) {
@@ -547,34 +530,6 @@ export default class PlayerService extends EventEmitter {
                 player.missedTurns = 0;
             }
         }
-    }
-
-    isAfk(game: Game, player: Player, isTurnBasedGame: boolean) {
-        // The player is afk if:
-        // 1. They haven't been seen for X days.
-        // 2. They missed the turn limit in a turn based game.
-        // 3. They missed X cycles in a real time game (minimum of 12 hours)
-
-        // Note: In tutorial games, only legit players can be considered afk.
-        if (this.gameTypeService.isTutorialGame(game) && !player.userId) {
-            return false;
-        }
-
-        let lastSeenMoreThanXDaysAgo = moment(player.lastSeen).utc() < moment().utc().subtract(game.settings.gameTime.afk.lastSeenTimeout, 'days');
-
-        if (lastSeenMoreThanXDaysAgo) {
-            return true;
-        }
-
-        if (isTurnBasedGame) {
-            return player.missedTurns >= game.settings.gameTime.afk.turnTimeout;
-        }
-
-        let secondsXCycles = game.settings.galaxy.productionTicks * game.settings.gameTime.speed * game.settings.gameTime.afk.cycleTimeout;
-        let secondsToAfk = Math.max(secondsXCycles, 43200); // Minimum of 12 hours.
-        let lastSeenMoreThanXSecondsAgo = moment(player.lastSeen).utc() < moment().utc().subtract(secondsToAfk, 'seconds');
-
-        return lastSeenMoreThanXSecondsAgo;
     }
 
     setPlayerAsDefeated(game: Game, player: Player, openSlot: boolean) {

@@ -30,6 +30,7 @@
     "randomAsteroidFields": 10,
     "randomBinaryStars": 10,
     "randomBlackHoles": 5,
+    "randomPulsars": 1,
     "darkGalaxy": "start",
     "giftCarriers": "enabled",
     "defenderBonus": "enabled",
@@ -45,7 +46,8 @@
   },
   "conquest": {
     "victoryCondition": "starPercentage",
-    "victoryPercentage": 50
+    "victoryPercentage": 50,
+    "capitalStarElimination": "disabled"
   },
   "orbitalMechanics": {
     "enabled": "disabled",
