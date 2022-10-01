@@ -1346,7 +1346,7 @@ export default class AIService {
     }
 
     _isFriendlyStar(player: Player, diplomacy: DiplomacyState, star: Star): boolean {
-        return !star.ownedByPlayerId || star.ownedByPlayerId === player._id || this._isFriendlyPlayer(diplomacy, star.ownedByPlayerId);
+        return !star.ownedByPlayerId || star.ownedByPlayerId.toString() === player._id.toString() || this._isFriendlyPlayer(diplomacy, star.ownedByPlayerId);
     }
 
     _isFriendlyPlayer(diplomacy: DiplomacyState, ownedByPlayerId: DBObjectId): boolean {
