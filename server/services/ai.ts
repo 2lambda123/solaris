@@ -207,6 +207,9 @@ export default class AIService {
     }
 
     async _doAdvancedLogic(game: Game, player: Player, isFirstTickOfCycle: boolean, isLastTickOfCycle: boolean) {
+        // This is used to fix up the AI being hostile towards players that are themselves neutral (diplo) and friendly
+        await this._handlePlayerReputation(game, player);
+
         const context = this._createContext(game, player);
 
         if (context == null) {
@@ -1376,5 +1379,24 @@ export default class AIService {
         }
 
         return true;
+    }
+
+    async _handlePlayerReputation(game: Game, player: Player) {
+        if (game.settings.diplomacy.enabled === "disabled") {
+            return;
+        }
+
+        for (const otherPlayer of game.galaxy.players) {
+            if (otherPlayer._id.toString() === player._id.toString()) {
+                continue;
+            }
+
+            const diploState = this.diplomacyService.getDiplomaticStatusToPlayer(game, player._id, otherPlayer._id);
+            const goodReputation = this._hasFriendlyReputation(player, otherPlayer);
+
+            if (diploState.statusFrom === "enemies" && diploState.statusTo === "neutral" && goodReputation) {
+                await this.diplomacyService.declareNeutral(game, player._id, otherPlayer._id, false);
+            }
+        }
     }
 }
