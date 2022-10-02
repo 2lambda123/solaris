@@ -192,13 +192,13 @@ export default class ReputationService extends EventEmitter {
         const status = this.diplomacyService.getDiplomaticStatusToPlayer(game, fromPlayer._id, toPlayer._id);
 
         if (reputation.score >= ALLY_REPUTATION_THRESHOLD && status.statusTo !== "allies") {
-            this.diplomacyService.declareAlly(game, fromPlayer._id, toPlayer._id, updateDatabase);
+            await this.diplomacyService.declareAlly(game, fromPlayer._id, toPlayer._id, updateDatabase);
         }
         else if (reputation.score <= ENEMY_REPUTATION_THRESHOLD && status.statusTo !== "enemies") {
-            this.diplomacyService.declareEnemy(game, fromPlayer._id, toPlayer._id, updateDatabase);
+            await this.diplomacyService.declareEnemy(game, fromPlayer._id, toPlayer._id, updateDatabase);
         }
         else if (reputation.score > ENEMY_REPUTATION_THRESHOLD && reputation.score < ALLY_REPUTATION_THRESHOLD && status.statusTo !== "neutral") {
-            this.diplomacyService.declareNeutral(game, fromPlayer._id, toPlayer._id, updateDatabase);
+            await this.diplomacyService.declareNeutral(game, fromPlayer._id, toPlayer._id, updateDatabase);
         }
     }
 
