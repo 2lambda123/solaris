@@ -1,5 +1,5 @@
 import {Game} from "./types/Game";
-import {Player} from "./types/Player";
+import {Player, PlayerReputation} from "./types/Player";
 import {KnownAttack} from "./types/Ai";
 import CarrierService from "./carrier";
 import CombatService from "./combat";
@@ -20,6 +20,7 @@ import PlayerStatisticsService from "./playerStatistics";
 import {DBObjectId} from "./types/DBObjectId";
 import BasicAIService from "./basicAi";
 import PlayerAfkService from "./playerAfk";
+import {DiplomaticState, DiplomaticStatus} from "./types/Diplomacy";
 
 const Heap = require('qheap');
 const mongoose = require("mongoose");
@@ -88,11 +89,13 @@ type Order = DefendStarOrder | ClaimStarOrder | ReinforceStarOrder | InvadeStarO
 
 type StarGraph = Map<string, Set<string>>;
 
-interface DiplomacyState {
-    alliedPlayers: Set<DBObjectId>,
-    neutralPlayers: Set<DBObjectId>,
-    hostilePlayers: Set<DBObjectId>
+interface PlayerRelation {
+    isFriendly: boolean;
+    diplomacyState: DiplomaticState;
+    isPotentiallyDangerous: boolean;
 }
+
+type PlayerRelations = Map<string, PlayerRelation>;
 
 interface Context {
     playerStars: Star[];
@@ -112,9 +115,9 @@ interface Context {
     playerEconomy: number;
     playerIndustry: number;
     playerScience: number;
-    transitFromCarriers: Map<string, Carrier[]>,
-    arrivingAtCarriers: Map<string, Carrier[]>,
-    diplomacy: DiplomacyState
+    transitFromCarriers: Map<string, Carrier[]>;
+    arrivingAtCarriers: Map<string, Carrier[]>;
+    playerRelations: PlayerRelations;
 }
 
 interface Assignment {
@@ -350,9 +353,9 @@ export default class AIService {
             starsById.set(star._id.toString(), star);
         }
 
-        const diplomacy = this._initDiplomacyState(game, player);
+        const playerRelations = this._createPlayerRelations(game, player);
 
-        const traversableStars = game.galaxy.stars.filter(star => this._isTraversableStar(game, player, diplomacy, star));
+        const traversableStars = game.galaxy.stars.filter(star => this._isTraversableStar(game, player, playerRelations, star));
         // All stars (belonging to anyone) that can be reached directly from a player star
         const allReachableFromPlayerStars = this._computeStarGraph(starsById, game, player, playerStars, game.galaxy.stars, this._getHyperspaceRangeExternal(game, player));
         // All stars (belonging to anyone) that can reach a player star (with our players range)
@@ -368,7 +371,7 @@ export default class AIService {
 
         const playerStarsInLogicalRange = this._computeStarGraph(starsById, game, player, playerStars, playerStars, this._getHyperspaceRangeLogical(game, player));
 
-        const borderStars = this._findBorderStars(game, player, diplomacy, starsById, playerStarsInLogicalRange, starsInGlobalRange);
+        const borderStars = this._findBorderStars(game, player, playerRelations, starsById, playerStarsInLogicalRange, starsInGlobalRange);
 
         const playerCarriers = this.carrierService.listCarriersOwnedByPlayer(game.galaxy.carriers, player._id);
 
@@ -389,7 +392,7 @@ export default class AIService {
 
         // Enemy carriers that are in transition to one of our stars
         const incomingCarriers = game.galaxy.carriers
-            .filter(carrier => this._willEngageInCombat(player, diplomacy, this.playerService.getById(game, carrier.ownedByPlayerId!)!) && carrier.orbiting === null)
+            .filter(carrier => this._willEngageInCombat(player, playerRelations, this.playerService.getById(game, carrier.ownedByPlayerId!)!) && carrier.orbiting === null)
             .flatMap(carrier => {
                 const waypoint = carrier.waypoints[0];
                 const destinationId = waypoint.destination;
@@ -458,11 +461,11 @@ export default class AIService {
             playerScience: this.playerStatisticsService.calculateTotalScience(playerStars),
             transitFromCarriers,
             arrivingAtCarriers,
-            diplomacy
+            playerRelations
         };
     }
 
-    _constructBorderStarData(game: Game, player: Player, diplomacy: DiplomacyState, starsById: Map<string, Star>, sourceStar: string, starsInGlobalRange: StarGraph): BorderStarData {
+    _constructBorderStarData(game: Game, player: Player, playerRelations: PlayerRelations, starsById: Map<string, Star>, sourceStar: string, starsInGlobalRange: StarGraph): BorderStarData {
         const allStarsInRange = starsInGlobalRange.get(sourceStar)!;
         const otherPlayersBordering = new Set<string>();
 
@@ -474,7 +477,7 @@ export default class AIService {
             if (otherStar.ownedByPlayerId && otherStar.ownedByPlayerId !== player._id) {
                 otherPlayersBordering.add(otherStar.ownedByPlayerId.toString());
 
-                hasHostileBorder = this._treatAsHostilePlayer(player, diplomacy, this.playerService.getById(game, otherStar.ownedByPlayerId)!);
+                hasHostileBorder = this._treatAsHostilePlayer(player, playerRelations, this.playerService.getById(game, otherStar.ownedByPlayerId)!);
             }
         }
 
@@ -484,12 +487,12 @@ export default class AIService {
         }
     }
 
-    _findBorderStars(game: Game, player: Player, diplomacy: DiplomacyState, starsById: Map<string, Star>, reachablePlayerStars: StarGraph, starsInGlobalRange: StarGraph): Map<string, BorderStarData> {
+    _findBorderStars(game: Game, player: Player, playerRelations: PlayerRelations, starsById: Map<string, Star>, reachablePlayerStars: StarGraph, starsInGlobalRange: StarGraph): Map<string, BorderStarData> {
         const borderStars = new Map<string, BorderStarData>();
 
         for (const [starId, reachables] of reachablePlayerStars) {
             if (reachables.size === 0 || reachables.size === 1) {
-                borderStars.set(starId, this._constructBorderStarData(game, player, diplomacy, starsById, starId, starsInGlobalRange));
+                borderStars.set(starId, this._constructBorderStarData(game, player, playerRelations, starsById, starId, starsInGlobalRange));
                 continue;
             }
 
@@ -523,7 +526,7 @@ export default class AIService {
             }
 
             if (largestGap > BORDER_STAR_ANGLE_THRESHOLD_DEGREES) {
-                borderStars.set(starId, this._constructBorderStarData(game, player, diplomacy, starsById, starId, starsInGlobalRange));
+                borderStars.set(starId, this._constructBorderStarData(game, player, playerRelations, starsById, starId, starsInGlobalRange));
             }
         }
 
@@ -1072,7 +1075,7 @@ export default class AIService {
             for (const reachable of reachables) {
                 const star = context.starsById.get(reachable)!;
 
-                if (this._isEnemyStar(game, player, context.diplomacy, star)) {
+                if (this._isEnemyStar(game, player, context.playerRelations, star)) {
                     // We adjust the stores by distance, so closer stars end up with a higher score.
                     // This stops the AI from jumping behind the enemies frontlines too often and leaving closer stars uninvaded and open for counter attacks.
                     const starScore = this._getStarScore(star);
@@ -1298,40 +1301,36 @@ export default class AIService {
         player.aiState = null;
     }
 
-    _initDiplomacyState(game: Game, player: Player): DiplomacyState {
-        const hostilePlayers = new Set<DBObjectId>();
-        const neutralPlayers = new Set<DBObjectId>();
-        const alliedPlayers = new Set<DBObjectId>();
+    _createPlayerRelations(game: Game, player: Player): PlayerRelations {
+        const relations = new Map<string, PlayerRelation>();
 
-        const diploStatuses = this.diplomacyService.getDiplomaticStatusToAllPlayers(game, player);
-
-        for (const status of diploStatuses) {
-            if (status.actualStatus === "allies") {
-                alliedPlayers.add(status.playerIdTo);
-            } else if (status.actualStatus === "neutral") {
-                neutralPlayers.add(status.playerIdTo);
-            } else if (status.actualStatus === "enemies") {
-                hostilePlayers.add(status.playerIdTo);
+        for (const otherPlayer of game.galaxy.players) {
+            const diplomacyState = this.diplomacyService.getDiplomaticStatusToPlayer(game, player._id, otherPlayer._id).actualStatus;
+            const relation = {
+                isFriendly: this._hasFriendlyReputation(player, otherPlayer),
+                diplomacyState,
+                isPotentiallyDangerous: this._assessDanger(game, player, otherPlayer)
             }
+            relations.set(player._id.toString(), relation);
         }
 
-        return {
-            hostilePlayers,
-            alliedPlayers,
-            neutralPlayers
-        }
+        return relations;
     }
 
-    _isHostilePlayer(player: Player, diplomacy: DiplomacyState, otherPlayer: Player): boolean {
-        return player._id.toString() !== otherPlayer._id.toString() && diplomacy.hostilePlayers.has(otherPlayer._id);
+    _assessDanger(game: Game, player: Player, otherPlayer: Player): boolean {
+        return true;
     }
 
-    _isNeutralPlayer(player: Player, diplomacy: DiplomacyState, otherPlayer: Player): boolean {
-        return player._id.toString() !== otherPlayer._id.toString() && diplomacy.neutralPlayers.has(otherPlayer._id);
+    _isHostilePlayer(player: Player, relations: PlayerRelations, otherPlayer: Player): boolean {
+        return player._id.toString() !== otherPlayer._id.toString() && relations.get(otherPlayer._id.toString())!.diplomacyState === "enemies";
     }
 
-    _isAlliedPlayer(player: Player, diplomacy: DiplomacyState, otherPlayer: Player): boolean {
-        return player._id.toString() === otherPlayer._id.toString() || diplomacy.alliedPlayers.has(otherPlayer._id);
+    _isNeutralPlayer(player: Player, relations: PlayerRelations, otherPlayer: Player): boolean {
+        return player._id.toString() !== otherPlayer._id.toString() && relations.get(otherPlayer._id.toString())!.diplomacyState === "neutral";
+    }
+
+    _isAlliedPlayer(player: Player, relations: PlayerRelations, otherPlayer: Player): boolean {
+        return player._id.toString() === otherPlayer._id.toString() || relations.get(otherPlayer._id.toString())!.diplomacyState === "allies";
     }
 
     _hasFriendlyReputation(player: Player, otherPlayer: Player): boolean {
@@ -1342,40 +1341,40 @@ export default class AIService {
         return this.reputationService.getReputation(player, otherPlayer).reputation.score < 0;
     }
 
-    _willEngageInCombat(player: Player, diplomacy: DiplomacyState, otherPlayer: Player): boolean {
-        return this._isHostilePlayer(player, diplomacy, otherPlayer) || this._isNeutralPlayer(player, diplomacy, otherPlayer);
+    _willEngageInCombat(player: Player, relations: PlayerRelations, otherPlayer: Player): boolean {
+        return this._isHostilePlayer(player, relations, otherPlayer) || this._isNeutralPlayer(player, relations, otherPlayer);
     }
 
-    _treatAsFriendlyPlayer(player: Player, diplomacy: DiplomacyState, otherPlayer: Player): boolean {
-        return this._isAlliedPlayer(player, diplomacy, otherPlayer) || (this._isNeutralPlayer(player, diplomacy, otherPlayer) && this._hasFriendlyReputation(player, otherPlayer));
+    _treatAsFriendlyPlayer(player: Player, relations: PlayerRelations, otherPlayer: Player): boolean {
+        return this._isAlliedPlayer(player, relations, otherPlayer) || (this._isNeutralPlayer(player, relations, otherPlayer) && this._hasFriendlyReputation(player, otherPlayer));
     }
 
-    _treatAsHostilePlayer(player: Player, diplomacy: DiplomacyState, otherPlayer: Player): boolean {
-        return !this._treatAsFriendlyPlayer(player, diplomacy, otherPlayer);
+    _treatAsHostilePlayer(player: Player, relations: PlayerRelations, otherPlayer: Player): boolean {
+        return !this._treatAsFriendlyPlayer(player, relations, otherPlayer);
     }
 
-    _isEnemyStar(game: Game, player: Player, diplomacy: DiplomacyState, star: Star): boolean {
+    _isEnemyStar(game: Game, player: Player, relations: PlayerRelations, star: Star): boolean {
         if (star.ownedByPlayerId) {
             const otherPlayer = this.playerService.getById(game, star.ownedByPlayerId)!;
-            return this._treatAsHostilePlayer(player, diplomacy, otherPlayer);
+            return this._treatAsHostilePlayer(player, relations, otherPlayer);
         }
 
         return false;
     }
 
-    _isFriendlyStar(game: Game, player: Player, diplomacy: DiplomacyState, star: Star): boolean {
+    _isFriendlyStar(game: Game, player: Player, relations: PlayerRelations, star: Star): boolean {
         if (star.ownedByPlayerId) {
             const otherPlayer = this.playerService.getById(game, star.ownedByPlayerId)!;
-            return this._treatAsFriendlyPlayer(player, diplomacy, otherPlayer);
+            return this._treatAsFriendlyPlayer(player, relations, otherPlayer);
         }
 
         return false;
     }
 
-    _isTraversableStar(game: Game, player: Player, diplomacy: DiplomacyState, star: Star): boolean {
+    _isTraversableStar(game: Game, player: Player, relations: PlayerRelations, star: Star): boolean {
         if (star.ownedByPlayerId) {
             const otherPlayer = this.playerService.getById(game, star.ownedByPlayerId)!;
-            return this._isAlliedPlayer(player, diplomacy, otherPlayer);
+            return this._isAlliedPlayer(player, relations, otherPlayer);
         }
 
         return true;
