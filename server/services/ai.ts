@@ -89,10 +89,27 @@ type Order = DefendStarOrder | ClaimStarOrder | ReinforceStarOrder | InvadeStarO
 
 type StarGraph = Map<string, Set<string>>;
 
+interface PlayerComparison {
+    hasMoreStars: boolean;
+    hasMoreShips: boolean;
+    hasMoreEconomy: boolean;
+    hasMoreIndustry: boolean;
+    hasMoreScience: boolean;
+    hasMoreShipsProduction: boolean;
+    hasMoreWeapons: boolean;
+    hasMoreManufacturing: boolean;
+    hasMoreTerraforming: boolean;
+    hasMoreBanking: boolean;
+    isEconomyThreat: boolean;
+    isIndustryThreat: boolean;
+    isScienceThreat: boolean;
+    isMilitaryThreat: boolean;
+}
+
 interface PlayerRelation {
     isFriendly: boolean;
     diplomacyState: DiplomaticState;
-    isPotentiallyDangerous: boolean;
+    comparison: PlayerComparison;
 }
 
 type PlayerRelations = Map<string, PlayerRelation>;
@@ -1309,7 +1326,7 @@ export default class AIService {
             const relation = {
                 isFriendly: this._hasFriendlyReputation(player, otherPlayer),
                 diplomacyState,
-                isPotentiallyDangerous: this._assessDanger(game, player, otherPlayer)
+                comparison: this._createPlayerComparison(game, player, otherPlayer)
             }
             relations.set(player._id.toString(), relation);
         }
@@ -1317,8 +1334,41 @@ export default class AIService {
         return relations;
     }
 
-    _assessDanger(game: Game, player: Player, otherPlayer: Player): boolean {
-        return true;
+    _createPlayerComparison(game: Game, player: Player, otherPlayer: Player): PlayerComparison {
+        const playerStats = this.playerStatisticsService.getStats(game, player);
+        const otherPlayerStats = this.playerStatisticsService.getStats(game, otherPlayer);
+        const hasMoreStars = otherPlayerStats.totalStars > playerStats.totalStars;
+        const hasMoreShips = otherPlayerStats.totalShips > playerStats.totalShips;
+        const hasMoreEconomy = otherPlayerStats.totalEconomy > playerStats.totalEconomy;
+        const hasMoreIndustry = otherPlayerStats.totalIndustry > playerStats.totalIndustry;
+        const hasMoreScience = otherPlayerStats.totalScience > playerStats.totalScience;
+        const hasMoreShipsProduction = otherPlayerStats.newShips > playerStats.newShips;
+        const hasMoreWeapons = otherPlayer.research.weapons > player.research.weapons;
+        const hasMoreManufacturing = otherPlayer.research.manufacturing > player.research.manufacturing;
+        const hasMoreTerraforming = otherPlayer.research.terraforming > player.research.terraforming;
+        const hasMoreBanking = otherPlayer.research.banking > player.research.banking;
+
+        const isEconomyThreat = hasMoreStars || hasMoreEconomy || hasMoreTerraforming || hasMoreBanking;
+        const isIndustryThreat = hasMoreStars || hasMoreIndustry || hasMoreManufacturing || hasMoreShipsProduction;
+        const isScienceThreat = hasMoreStars || hasMoreScience;
+        const isMilitaryThreat = hasMoreShips || hasMoreWeapons;
+
+        return {
+            hasMoreStars,
+            hasMoreShips,
+            hasMoreEconomy,
+            hasMoreIndustry,
+            hasMoreScience,
+            hasMoreShipsProduction,
+            hasMoreWeapons,
+            hasMoreManufacturing,
+            hasMoreTerraforming,
+            hasMoreBanking,
+            isEconomyThreat,
+            isIndustryThreat,
+            isScienceThreat,
+            isMilitaryThreat
+        }
     }
 
     _isHostilePlayer(player: Player, relations: PlayerRelations, otherPlayer: Player): boolean {
