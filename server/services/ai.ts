@@ -1335,11 +1335,11 @@ export default class AIService {
     }
 
     _hasFriendlyReputation(player: Player, otherPlayer: Player): boolean {
-        return this.reputationService.getReputation(otherPlayer, player).reputation.score >= TREAT_FRIENDLY_REPUTATION;
+        return this.reputationService.getReputation(player, otherPlayer).reputation.score >= TREAT_FRIENDLY_REPUTATION;
     }
 
     _hasHostileReputation(player: Player, otherPlayer: Player): boolean {
-        return this.reputationService.getReputation(otherPlayer, player).reputation.score < 0;
+        return this.reputationService.getReputation(player, otherPlayer).reputation.score < 0;
     }
 
     _willEngageInCombat(player: Player, diplomacy: DiplomacyState, otherPlayer: Player): boolean {
