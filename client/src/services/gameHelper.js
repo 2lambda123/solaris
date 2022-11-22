@@ -84,15 +84,7 @@ class GameHelper {
   }
 
   getHyperspaceDistance (game, player, carrier) {
-    let techLevel = player.research.hyperspace.level
-
-    if (carrier.specialist && carrier.specialist.modifiers.local) {
-      techLevel += carrier.specialist.modifiers.local.hyperspace || 0
-    }
-
-    techLevel = Math.max(1, techLevel)
-
-    return ((techLevel || 1) + 1.5) * game.constants.distances.lightYear
+    return ((carrier.effectiveTechs.hyperspace || 1) + 1.5) * game.constants.distances.lightYear
   }
 
   getScanningLevelByDistance (game, distance) {
@@ -516,6 +508,10 @@ class GameHelper {
           (game.settings.specialGalaxy.darkGalaxy === 'start' && game.state.startDate == null)
   }
 
+  isDarkFogged (game) {
+    return game.settings.specialGalaxy.darkGalaxy === 'fog'
+  }
+
   isTradeEnabled (game) {
     return game.settings.player.tradeCredits || game.settings.player.tradeCreditsSpecialists || game.settings.player.tradeCost
   }
@@ -538,6 +534,10 @@ class GameHelper {
 
   isTutorialGame (game) {
     return game.settings.general.type === 'tutorial'
+  }
+
+  isSpectatingEnabled (game) {
+    return game.settings.general.spectators === 'enabled'
   }
 
   getGameStatusText (game) {
@@ -1019,6 +1019,7 @@ class GameHelper {
       '32_player_rt': '32 Players',
       'custom': 'Custom',
       'special_dark': 'Dark Galaxy',
+      'special_fog': 'Fogged Galaxy',
       'special_ultraDark': 'Ultra Dark Galaxy',
       'special_orbital': 'Orbital',
       'special_battleRoyale': 'Battle Royale',
@@ -1027,7 +1028,8 @@ class GameHelper {
       'special_anonymous': 'Anonymous',
       'special_kingOfTheHill': 'King Of The Hill',
       'special_tinyGalaxy': 'Tiny Galaxy',
-      'special_freeForAll': 'Free For All'
+      'special_freeForAll': 'Free For All',
+      'special_arcade': 'Arcade'
     }[game.settings.general.type]
   }
 
@@ -1074,6 +1076,10 @@ class GameHelper {
     }
 
     return result
+  }
+
+  isPopulationCapped(game) {
+    return game.settings.player.populationCap.enabled === 'enabled'
   }
 }
 

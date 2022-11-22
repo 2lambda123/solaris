@@ -2,7 +2,7 @@ import ValidationError from '../../errors/validation';
 import { DependencyContainer } from '../../services/types/DependencyContainer';
 import { mapToGameConcedeDefeatRequest, mapToGameJoinGameRequest, mapToGameSaveNotesRequest } from '../requests/game';
 
-export default (container: DependencyContainer, io) => {
+export default (container: DependencyContainer) => {
     return {
         getDefaultSettings: (req, res, next) => {
             return res.status(200).json({
@@ -145,6 +145,15 @@ export default (container: DependencyContainer, io) => {
         listMyActiveGames: async (req, res, next) => {
             try {
                 let games = await container.gameListService.listActiveGames(req.session.userId);
+    
+                return res.status(200).json(games);
+            } catch (err) {
+                return next(err);
+            }
+        },
+        listSpectating: async (req, res, next) => {
+            try {
+                let games = await container.gameListService.listSpectating(req.session.userId);
     
                 return res.status(200).json(games);
             } catch (err) {

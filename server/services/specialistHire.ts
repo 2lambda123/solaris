@@ -12,6 +12,7 @@ import WaypointService from "./waypoint";
 import ValidationError from "../errors/validation";
 import SpecialistBanService from "./specialistBan";
 import PlayerCreditsService from "./playerCredits";
+import TechnologyService from "./technology";
 
 export default class SpecialistHireService {
     gameRepo: Repository<Game>;
@@ -22,6 +23,7 @@ export default class SpecialistHireService {
     starService: StarService;
     gameTypeService: GameTypeService;
     specialistBanService: SpecialistBanService;
+    technologyService: TechnologyService;
 
     constructor(
         gameRepo: Repository<Game>,
@@ -31,7 +33,8 @@ export default class SpecialistHireService {
         playerCreditsService: PlayerCreditsService,
         starService: StarService,
         gameTypeService: GameTypeService,
-        specialistBanService: SpecialistBanService
+        specialistBanService: SpecialistBanService,
+        technologyService: TechnologyService
     ) {
         this.gameRepo = gameRepo;
         this.specialistService = specialistService;
@@ -41,6 +44,7 @@ export default class SpecialistHireService {
         this.starService = starService;
         this.gameTypeService = gameTypeService;
         this.specialistBanService = specialistBanService;
+        this.technologyService = technologyService;
     }
 
     async hireCarrierSpecialist(game: Game, player: Player, carrierId: DBObjectId, specialistId: number) {
@@ -98,6 +102,7 @@ export default class SpecialistHireService {
         }
 
         carrier.specialistId = specialist.id;
+        carrier.specialistExpireTick = specialist.expireTicks ? game.state.tick + specialist.expireTicks : null;
 
         // Update the DB.
         await this.gameRepo.bulkWrite([
@@ -109,7 +114,8 @@ export default class SpecialistHireService {
                         'galaxy.carriers._id': carrier._id
                     },
                     update: {
-                        'galaxy.carriers.$.specialistId': carrier.specialistId
+                        'galaxy.carriers.$.specialistId': carrier.specialistId,
+                        'galaxy.carriers.$.specialistExpireTick': carrier.specialistExpireTick
                     }
                 }
             }
@@ -120,6 +126,8 @@ export default class SpecialistHireService {
         }
 
         // TODO: Need to consider local and global effects and update the UI accordingly.
+
+        carrier.effectiveTechs = this.technologyService.getCarrierEffectiveTechnologyLevels(game, carrier, true);
 
         let waypoints = await this.waypointService.cullWaypointsByHyperspaceRangeDB(game, carrier);
 
@@ -178,7 +186,13 @@ export default class SpecialistHireService {
             }
         }
 
+        // If the spec hired is one that builds worm holes, validate that the star isn't already a worm hole.
+        if (star.wormHoleToStarId && specialist.modifiers.special?.wormHoleConstructor) {
+            throw new ValidationError(`The star already has a worm hole connected to another star.`);
+        }
+
         star.specialistId = specialist.id;
+        star.specialistExpireTick = specialist.expireTicks ? game.state.tick + specialist.expireTicks : null;
 
         // Update the DB.
         await this.gameRepo.bulkWrite([
@@ -190,7 +204,8 @@ export default class SpecialistHireService {
                         'galaxy.stars._id': star._id
                     },
                     update: {
-                        'galaxy.stars.$.specialistId': star.specialistId
+                        'galaxy.stars.$.specialistId': star.specialistId,
+                        'galaxy.stars.$.specialistExpireTick': star.specialistExpireTick
                     }
                 }
             }
@@ -203,6 +218,8 @@ export default class SpecialistHireService {
         // TODO: The star may have its manufacturing changed so return back the new manufacturing.
         // TODO: Scanning changes are done by refreshing the entire game on the UI, would be ideally better to calculate it here?
         // TODO: Need to consider local and global effects and update the UI accordingly.
+
+        star.effectiveTechs = this.technologyService.getStarEffectiveTechnologyLevels(game, star, true);
 
         return {
             star,

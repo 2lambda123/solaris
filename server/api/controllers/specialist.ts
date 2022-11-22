@@ -1,7 +1,7 @@
 import ValidationError from '../../errors/validation';
 import { DependencyContainer } from '../../services/types/DependencyContainer';
 
-export default (container: DependencyContainer, io) => {
+export default (container: DependencyContainer) => {
     return {
         listBans: async (req, res, next) => {
             try {
@@ -72,7 +72,8 @@ export default (container: DependencyContainer, io) => {
                 );
     
                 return res.status(200).json({
-                    waypoints: result.waypoints
+                    waypoints: result.waypoints,
+                    effectiveTechs: result.carrier.effectiveTechs
                 });
             } catch (err) {
                 return next(err);
@@ -94,7 +95,9 @@ export default (container: DependencyContainer, io) => {
                     result.specialist
                 );
     
-                return res.sendStatus(200);
+                return res.status(200).json({
+                    effectiveTechs: result.star.effectiveTechs
+                });
             } catch (err) {
                 return next(err);
             }

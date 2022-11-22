@@ -11,7 +11,8 @@
     "playerOnlineStatus": "hidden",
     "timeMachine": "disabled",
     "fluxEnabled": "enabled",
-    "advancedAI": "enabled"
+    "advancedAI": "enabled",
+    "spectators": "disabled"
   },
   "galaxy": {
     "galaxyType": "irregular",
@@ -39,6 +40,7 @@
     "resourceDistribution": "random",
     "playerDistribution": "circular",
     "carrierSpeed": 20,
+    "starCaptureReward": "enabled",
     "specialistBans": {
       "star": [],
       "carrier": []
@@ -71,7 +73,11 @@
     "tradeCredits": true,
     "tradeCreditsSpecialists": true,
     "tradeCost": 15,
-    "tradeScanning": "scanned"
+    "tradeScanning": "scanned",
+    "populationCap": {
+      "enabled": "disabled",
+      "shipsPerStar": 100
+    }
   },
   "diplomacy": {
     "enabled": "enabled",

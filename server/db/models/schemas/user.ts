@@ -97,6 +97,7 @@ const schema = new Schema({
             sleepless: { type: Types.Number, default: 0 },
             victor32: { type: Types.Number, default: 0 },
             special_dark: { type: Types.Number, default: 0 },
+            special_fog: { type: Types.Number, default: 0 },
             special_ultraDark: { type: Types.Number, default: 0 },
             special_orbital: { type: Types.Number, default: 0 },
             special_battleRoyale: { type: Types.Number, default: 0 },
@@ -105,7 +106,8 @@ const schema = new Schema({
             special_anonymous: { type: Types.Number, default: 0 },
             special_kingOfTheHill: { type: Types.Number, default: 0 },
             special_tinyGalaxy: { type: Types.Number, default: 0 },
-            special_freeForAll: { type: Types.Number, default: 0 }
+            special_freeForAll: { type: Types.Number, default: 0 },
+            special_arcade: { type: Types.Number, default: 0 }
         }
     },
     gameSettings: {

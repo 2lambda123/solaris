@@ -68,7 +68,12 @@
             tooltip="Use the advanced AI to replace defeated players"
             :valueText="getFriendlyText(game.settings.general.advancedAI)"
             :value="game.settings.general.advancedAI"
-            :compareValue="game.settings.general.advancedAI"/>
+            :compareValue="compareSettings.general.advancedAI"/>
+          <game-setting-value title="Allow Spectators"
+            tooltip="Allow players to invite users to spectate the game"
+            :valueText="getFriendlyText(game.settings.general.spectators)"
+            :value="game.settings.general.spectators"
+            :compareValue="compareSettings.general.spectators"/>
         </tbody>
       </table>
     </div>
@@ -276,6 +281,11 @@
             :valueText="(game.settings.specialGalaxy.carrierSpeed / game.constants.distances.lightYear)+'/ly tick'"
             :value="game.settings.specialGalaxy.carrierSpeed"
             :compareValue="compareSettings.specialGalaxy.carrierSpeed"/>
+          <game-setting-value title="Star Capture Rewards"
+            tooltip="Determines whether economic infrastructure is destroyed on star capture and if the attacker is awarded cash for destroying them"
+            :valueText="getFriendlyText(game.settings.specialGalaxy.starCaptureReward)"
+            :value="game.settings.specialGalaxy.starCaptureReward"
+            :compareValue="compareSettings.specialGalaxy.starCaptureReward"/>
         </tbody>
       </table>
     </div>
@@ -340,17 +350,17 @@
             :value="game.settings.player.startingInfrastructure.science"
             :compareValue="compareSettings.player.startingInfrastructure.science"/>
           <game-setting-value title="Economy Cost"
-            tooltip="Determines how expensive infrastructure costs to build"
+            tooltip="Determines how expensive infrastructure costs to build. If disabled, then one third of all stars will start with the starting economic infrastructure"
             :valueText="getFriendlyText(game.settings.player.developmentCost.economy)"
             :value="game.settings.player.developmentCost.economy"
             :compareValue="compareSettings.player.developmentCost.economy"/>
           <game-setting-value title="Industry Cost"
-            tooltip="Determines how expensive infrastructure costs to build"
+            tooltip="Determines how expensive infrastructure costs to build. If disabled, then one third of all stars will start with the starting industry infrastructure"
             :valueText="getFriendlyText(game.settings.player.developmentCost.industry)"
             :value="game.settings.player.developmentCost.industry"
             :compareValue="compareSettings.player.developmentCost.industry"/>
           <game-setting-value title="Science Cost"
-            tooltip="Determines how expensive infrastructure costs to build"
+            tooltip="Determines how expensive infrastructure costs to build. If disabled, then one third of all stars will start with the starting science infrastructure"
             :valueText="getFriendlyText(game.settings.player.developmentCost.science)"
             :value="game.settings.player.developmentCost.science"
             :compareValue="compareSettings.player.developmentCost.science"/>
@@ -376,6 +386,24 @@
             :value="game.settings.player.tradeScanning"
             :compareValue="compareSettings.player.tradeScanning"
             v-if="game.settings.player.tradeCost > 0"/>
+        </tbody>
+      </table>
+    </div>
+
+    <view-subtitle title="Ship Population Cap"/>
+    <div class="table-responsive">
+      <table class="table table-striped table-hover">
+        <tbody>
+          <game-setting-value title="Enabled"
+            tooltip="If enabled, the maximum ship population per player will be restricted"
+            :valueText="getFriendlyText(game.settings.player.populationCap.enabled)"
+            :value="game.settings.player.populationCap.enabled"
+            :compareValue="compareSettings.player.populationCap.enabled"/>
+          <game-setting-value title="Ships Per Star" v-if="game.settings.player.populationCap.enabled === 'enabled'"
+            tooltip="Determines the max population of ships per star"
+            :valueText="game.settings.player.populationCap.shipsPerStar"
+            :value="game.settings.player.populationCap.shipsPerStar"
+            :compareValue="compareSettings.player.populationCap.shipsPerStar"/>
         </tbody>
       </table>
     </div>
@@ -600,7 +628,11 @@ export default {
         'galacticCenterOfMass': 'Galactic Center of Mass',
         'starPercentage': 'Star Percentage',
         'homeStarPercentage': 'Capital Star Percentage',
-        'kingOfTheHill': 'King Of The Hill'
+        'kingOfTheHill': 'King Of The Hill',
+        'low': 'Low',
+        'medium': 'Medium',
+        'high': 'High',
+        'fog': 'Fogged'
       }[option]
 
       return text || option

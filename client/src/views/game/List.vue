@@ -92,6 +92,7 @@
                   <h5 class="card-title special-card-title">
                     <i class="fas" :class="{
                       'fa-moon': games.special.settings.general.type === 'special_dark',
+                      'fa-moon': games.special.settings.general.type === 'special_fog',
                       'fa-moon': games.special.settings.general.type === 'special_ultraDark',
                       'fa-drumstick-bite': games.special.settings.general.type === 'special_battleRoyale',
                       'fa-satellite': games.special.settings.general.type === 'special_orbital',
@@ -100,7 +101,8 @@
                       'fa-user-secret': games.special.settings.general.type === 'special_anonymous',
                       'fa-crown': games.special.settings.general.type === 'special_kingOfTheHill',
                       'fa-search': games.special.settings.general.type === 'special_tinyGalaxy',
-                      'fa-user-secret': games.special.settings.general.type === 'special_freeForAll'
+                      'fa-user-secret': games.special.settings.general.type === 'special_freeForAll',
+                      'fa-gamepad': games.special.settings.general.type === 'special_arcade'
                     }"></i>
                     <span class="ms-2">{{games.special.settings.general.name}}</span>
                   </h5>
@@ -475,6 +477,7 @@ export default {
     getSpecialGame () {
       const types = [
         'special_dark',
+        'special_fog',
         'special_ultraDark',
         'special_orbital',
         'special_battleRoyale',
@@ -483,7 +486,8 @@ export default {
         'special_anonymous',
         'special_kingOfTheHill',
         'special_tinyGalaxy',
-        'special_freeForAll'
+        'special_freeForAll',
+        'special_arcade'
       ]
       
       return this.serverGames.find(x => types.includes(x.settings.general.type))

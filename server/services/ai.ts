@@ -20,6 +20,7 @@ import PlayerStatisticsService from "./playerStatistics";
 import {DBObjectId} from "./types/DBObjectId";
 import BasicAIService from "./basicAi";
 import PlayerAfkService from "./playerAfk";
+import ShipService from "./ship";
 
 const Heap = require('qheap');
 const mongoose = require("mongoose");
@@ -152,6 +153,7 @@ export default class AIService {
     diplomacyService: DiplomacyService;
     playerStatisticsService: PlayerStatisticsService;
     basicAIService: BasicAIService;
+    shipService: ShipService;
 
     constructor(
         starUpgradeService: StarUpgradeService,
@@ -167,6 +169,7 @@ export default class AIService {
         reputationService: ReputationService,
         diplomacyService: DiplomacyService,
         playerStatisticsService: PlayerStatisticsService,
+        shipService: ShipService,
         basicAIService: BasicAIService
     ) {
         this.starUpgradeService = starUpgradeService;
@@ -183,6 +186,7 @@ export default class AIService {
         this.diplomacyService = diplomacyService;
         this.playerStatisticsService = playerStatisticsService;
         this.basicAIService = basicAIService;
+        this.shipService = shipService;
     }
 
     async play(game: Game, player: Player) {
@@ -960,7 +964,7 @@ export default class AIService {
 
         const techLevel = this.technologyService.getStarEffectiveTechnologyLevels(game, starToInvade, false);
         const shipsOnCarriers = defendingCarriers.reduce((sum, c) => sum + (c.ships || 0), 0);
-        const shipsProduced = this.starService.calculateStarShipsByTicks(techLevel.manufacturing, starToInvade.infrastructure.industry || 0, ticksToArrival, game.settings.galaxy.productionTicks);
+        const shipsProduced = this.shipService.calculateStarShipsByTicks(techLevel.manufacturing, starToInvade.infrastructure.industry || 0, ticksToArrival, game.settings.galaxy.productionTicks);
         const shipsAtArrival = (starToInvade.shipsActual || 0) + shipsOnCarriers + shipsProduced;
 
         const defender = {
@@ -1027,20 +1031,21 @@ export default class AIService {
 
         for (const playerStar of context.playerStars) {
             const carriersHere = context.carriersOrbiting.get(playerStar._id.toString()) || [];
+            const carriersOwned = carriersHere.filter(c => c.ownedByPlayerId!.toString() === player._id.toString());
 
-            for (const carrier of carriersHere) {
+            for (const carrier of carriersOwned) {
                 if (carrier.ships! > 1) {
                     const newStarShips = playerStar.ships! + carrier.ships! - 1;
                     await this.shipTransferService.transfer(game, player, carrier._id, 1, playerStar._id, newStarShips, false);
                 }
             }
 
-            if (playerStar.ships! < 1 && carriersHere.length === 0) {
+            if (playerStar.ships! < 1 && carriersOwned.length === 0) {
                 continue;
             }
 
             assignments.set(playerStar._id.toString(), {
-                carriers: carriersHere,
+                carriers: carriersOwned,
                 star: playerStar,
                 totalShips: playerStar.ships!
             });
