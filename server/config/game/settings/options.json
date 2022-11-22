@@ -72,6 +72,16 @@
              "text": "Disabled"
           }
        ],
+       "spectators": [
+          {
+             "value": "enabled",
+             "text": "Enabled"
+          },
+          {
+             "value": "disabled",
+             "text": "Disabled"
+          }
+       ],
        "fluxEnabled":[
           {
              "value":"enabled",
@@ -172,12 +182,16 @@
              "text":"Disabled"
           },
           {
+            "value":"fog",
+            "text":"Fogged"
+          },
+          {
              "value":"standard",
-             "text":"Standard"
+             "text":"Dark"
           },
           {
              "value":"extra",
-             "text":"Extra"
+             "text":"Extra Dark"
           },
           {
              "value":"start",
@@ -273,6 +287,16 @@
              "value":25,
              "text":"Crazy Fast"
           }
+       ],
+       "starCaptureReward": [
+         {
+            "value":"enabled",
+            "text":"Enabled"
+         },
+         {
+            "value":"disabled",
+            "text":"Disabled"
+         }
        ]
     },
     "galaxy":{
@@ -363,6 +387,10 @@
     "player":{
        "developmentCost":[
           {
+            "value":"none",
+            "text":"Disabled"
+          },
+          {
              "value":"cheap",
              "text":"Cheap"
           },
@@ -430,7 +458,19 @@
              "value":"scanned",
              "text":"Trade with scanned players only"
           }
-       ]
+       ],
+       "populationCap":{
+         "enabled": [
+           {
+              "value":"enabled",
+              "text":"Enabled"
+           },
+           {
+              "value":"disabled",
+              "text":"Disabled"
+           }
+         ]
+       }
     },
     "diplomacy":{
        "enabled": [

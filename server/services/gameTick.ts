@@ -37,6 +37,7 @@ import GamePlayerDefeatedEvent from "./types/events/GamePlayerDefeated";
 import GamePlayerAFKEvent from "./types/events/GamePlayerAFK";
 import GameEndedEvent from "./types/events/GameEnded";
 import PlayerAfkService from "./playerAfk";
+import ShipService from "./ship";
 
 const EventEmitter = require('events');
 const moment = require('moment');
@@ -79,6 +80,7 @@ export default class GameTickService extends EventEmitter {
     carrierGiftService: CarrierGiftService;
     starContestedService: StarContestedService;
     playerReadyService: PlayerReadyService;
+    shipService: ShipService;
     
     constructor(
         distanceService: DistanceService,
@@ -108,7 +110,8 @@ export default class GameTickService extends EventEmitter {
         carrierMovementService: CarrierMovementService,
         carrierGiftService: CarrierGiftService,
         starContestedService: StarContestedService,
-        playerReadyService: PlayerReadyService
+        playerReadyService: PlayerReadyService,
+        shipService: ShipService
     ) {
         super();
             
@@ -140,6 +143,7 @@ export default class GameTickService extends EventEmitter {
         this.carrierGiftService = carrierGiftService;
         this.starContestedService = starContestedService;
         this.playerReadyService = playerReadyService;
+        this.shipService = shipService;
     }
 
     async tick(gameId: DBObjectId) {
@@ -160,7 +164,7 @@ export default class GameTickService extends EventEmitter {
         */
 
         let startTime = process.hrtime();
-        console.info(`[${game.settings.general.name}] - Game tick started.`);
+        console.log(`[${game.settings.general.name}] - Game tick started at ${new Date().toISOString()}`);
 
         game.state.lastTickDate = moment().utc();
 
@@ -170,7 +174,7 @@ export default class GameTickService extends EventEmitter {
         let logTime = (taskName: string) => {
             taskTimeEnd = process.hrtime(taskTime);
             taskTime = process.hrtime();
-            console.info(`[${game.settings.general.name}] - ${taskName}: %ds %dms'`, taskTimeEnd[0], taskTimeEnd[1] / 1000000);
+            console.log(`[${game.settings.general.name}] - ${taskName}: %ds %dms'`, taskTimeEnd[0], taskTimeEnd[1] / 1000000);
         };
 
         let gameUsers = await this.userService.getGameUsers(game);
@@ -230,6 +234,9 @@ export default class GameTickService extends EventEmitter {
             this._oneTickSpecialists(game);
             logTime('Apply effects of onetick specialists');
 
+            this._clearExpiredSpecialists(game);
+            logTime('Clear expired specialists')
+
             this._countdownToEndCheck(game);
             logTime('Countdown to end check');
 
@@ -260,7 +267,7 @@ export default class GameTickService extends EventEmitter {
 
         let endTime = process.hrtime(startTime);
 
-        console.info(`[${game.settings.general.name}] - Game tick ended: %ds %dms'`, endTime[0], endTime[1] / 1000000);
+        console.log(`[${game.settings.general.name}] - Game tick ended: %ds %dms'`, endTime[0], endTime[1] / 1000000);
     }
 
     canTick(game: Game) {
@@ -571,7 +578,7 @@ export default class GameTickService extends EventEmitter {
 
         // 4b. Build ships at star.
         this.starService.applyStarSpecialistSpecialModifiers(game);
-        this.starService.produceShips(game);
+        this.shipService.produceShips(game);
 
         // 4c. Do the rest of the waypoint actions.
         this.waypointService.performWaypointActionsCollects(game, actionWaypoints);
@@ -829,6 +836,11 @@ export default class GameTickService extends EventEmitter {
     _oneTickSpecialists(game: Game) {
         this.playerCycleRewardsService.giveFinancialAnalystCredits(game);
         this.starMovementService.moveStellarEngines(game);
+        this.starService.pairWormHoleConstructors(game);
+    }
+
+    _clearExpiredSpecialists(game: Game) {
+        this.specialistService.clearExpiredSpecialists(game);
     }
 
     _orbitGalaxy(game: Game) {

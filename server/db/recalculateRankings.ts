@@ -58,6 +58,7 @@ async function startup() {
             'achievements.joined': 0,
             'achievements.badges.victor32': 0,
             'achievements.badges.special_dark': 0,
+            'achievements.badges.special_fog': 0,
             'achievements.badges.special_ultraDark': 0,
             'achievements.badges.special_orbital': 0,
             'achievements.badges.special_battleRoyale': 0,
@@ -66,7 +67,8 @@ async function startup() {
             'achievements.badges.special_anonymous': 0,
             'achievements.badges.special_kingOfTheHill': 0,
             'achievements.badges.special_tinyGalaxy': 0,
-            'achievements.badges.special_freeForAll': 0
+            'achievements.badges.special_freeForAll': 0,
+            'achievements.badges.special_arcade': 0,
         }
     });
     console.log(`Done.`);
@@ -177,6 +179,7 @@ async function startup() {
                     'achievements.joined': user.achievements.joined,
                     'achievements.badges.victor32': user.achievements.badges.victor32,
                     'achievements.badges.special_dark': user.achievements.badges.special_dark,
+                    'achievements.badges.special_fog': user.achievements.badges.special_fog,
                     'achievements.badges.special_ultraDark': user.achievements.badges.special_ultraDark,
                     'achievements.badges.special_orbital': user.achievements.badges.special_orbital,
                     'achievements.badges.special_battleRoyale': user.achievements.badges.special_battleRoyale,
@@ -185,7 +188,8 @@ async function startup() {
                     'achievements.badges.special_anonymous': user.achievements.badges.special_anonymous,
                     'achievements.badges.special_kingOfTheHill': user.achievements.badges.special_kingOfTheHill,
                     'achievements.badges.special_tinyGalaxy': user.achievements.badges.special_tinyGalaxy,
-                    'achievements.badges.special_freeForAll': user.achievements.badges.special_freeForAll
+                    'achievements.badges.special_freeForAll': user.achievements.badges.special_freeForAll,
+                    'achievements.badges.special_arcade': user.achievements.badges.special_arcade,
                 }
             }
         }

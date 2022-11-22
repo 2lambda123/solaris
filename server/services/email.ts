@@ -162,7 +162,7 @@ export default class EmailService {
             text
         };
         
-        console.log(`EMAIL: [${message.from}] -> [${message.to}] - ${subject}`);
+        console.log(`EMAIL: [${message.to}] - ${subject}`);
 
         return await transport.sendMail(message);
     }
@@ -177,7 +177,7 @@ export default class EmailService {
             html
         };
         
-        console.log(`EMAIL HTML: [${message.from}] -> [${message.to}] - ${subject}`);
+        console.log(`EMAIL HTML: [${message.to}] - ${subject}`);
 
         return await transport.sendMail(message);
     }
@@ -351,11 +351,7 @@ export default class EmailService {
         let game = (await this.gameService.getById(gameId))!;
 
         // Only send the next turn reminder in TB games and if the game is in progress.
-        if (!this.gameTypeService.isTurnBasedGame(game)) {
-            return;
-        }
-
-        if (!this.gameStateService.isInProgress(game)) {
+        if (!this.gameTypeService.isTurnBasedGame(game) || !this.gameStateService.isInProgress(game) || this.gameTypeService.isTutorialGame(game)) {
             return;
         }
         

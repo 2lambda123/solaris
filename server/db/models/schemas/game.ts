@@ -25,6 +25,7 @@ const schema = new Schema({
 				'new_player_tb',
 				'32_player_rt',
 				'special_dark',
+				'special_fog',
 				'special_ultraDark',
 				'special_orbital',
 				'special_battleRoyale',
@@ -33,7 +34,8 @@ const schema = new Schema({
 				'special_anonymous',
 				'special_kingOfTheHill',
 				'special_tinyGalaxy',
-				'special_freeForAll'
+				'special_freeForAll',
+				'special_arcade'
 			], default: 'custom' },
 			mode: { type: Types.String, required: true, enum: [
 				'conquest', 'battleRoyale', 'kingOfTheHill'
@@ -48,7 +50,8 @@ const schema = new Schema({
 			timeMachine: { type: Types.String, required: true, enum: ['disabled', 'enabled'], default: 'disabled' },
 			awardRankTo: { type: Types.String, required: false, enum: ['all', 'winner'], default: 'all' },
 			fluxEnabled: { type: Types.String, required: true, enum: ['disabled', 'enabled'], default: 'disabled' },
-			advancedAI: { type: Types.String, required: false, enum: ['disabled', 'enabled'], default: 'disabled' }
+			advancedAI: { type: Types.String, required: false, enum: ['disabled', 'enabled'], default: 'disabled' },
+			spectators: { type: Types.String, required: false, enum: ['disabled', 'enabled'], default: 'disabled' }
         },
         galaxy: {
 			galaxyType: { type: Types.String, required: true, enum: ['circular', 'spiral', 'doughnut','circular-balanced', 'irregular', 'custom'], default: 'circular' },
@@ -68,7 +71,7 @@ const schema = new Schema({
 			randomBinaryStars: { type: Types.Number, min: 0, max: 50, default: 0 },
 			randomBlackHoles: { type: Types.Number, min: 0, max: 50, default: 0 },
 			randomPulsars: { type: Types.Number, min: 0, max: 50, default: 0 },
-			darkGalaxy: { type: Types.String, required: true, enum: ['disabled', 'standard', 'extra', 'start'], default: 'start' },
+			darkGalaxy: { type: Types.String, required: true, enum: ['disabled', 'fog', 'standard', 'extra', 'start'], default: 'start' },
 			giftCarriers: { type: Types.String, required: true, enum: ['disabled', 'enabled'], default: 'enabled' },
 			defenderBonus: { type: Types.String, required: true, enum: ['disabled', 'enabled'], default: 'enabled' },
 			carrierToCarrierCombat: { type: Types.String, required: true, enum: ['disabled', 'enabled'], default: 'disabled' },
@@ -76,10 +79,11 @@ const schema = new Schema({
 			resourceDistribution: { type: Types.String, required: true, enum: ['random','weightedCenter'], default: 'random' },
 			playerDistribution: { type: Types.String, required: true, enum: ['circular','random'], default: 'circular' },
 			carrierSpeed: { type: Types.Number, required: true, min: 1, max: 25, default: 5 },
+			starCaptureReward: { type: Types.String, required: true, enum: ['enabled', 'disabled'], default: 'enabled' },
 			specialistBans: {
 				star: [{ type: Types.Number, required: false }],
 				carrier: [{ type: Types.Number, required: false }]
-			},
+			}
         },
 		conquest: {
 			victoryCondition: { type: Types.String, required: true, enum: ['starPercentage', 'homeStarPercentage'], default: 'starPercentage' },
@@ -104,14 +108,19 @@ const schema = new Schema({
 				science: { type: Types.Number, required: true, min: 0, max: 5, default: 1 }
 			},
 			developmentCost: {
-				economy: { type: Types.String, required: true, enum: ['cheap', 'standard', 'expensive'], default: 'standard' },
-				industry: { type: Types.String, required: true, enum: ['cheap', 'standard', 'expensive'], default: 'standard' },
-				science: { type: Types.String, required: true, enum: ['cheap', 'standard', 'expensive'], default: 'standard' }
+				// Note: 'none' means that players cannot build the infrastructure
+				economy: { type: Types.String, required: true, enum: ['none', 'cheap', 'standard', 'expensive'], default: 'standard' },
+				industry: { type: Types.String, required: true, enum: ['none', 'cheap', 'standard', 'expensive'], default: 'standard' },
+				science: { type: Types.String, required: true, enum: ['none', 'cheap', 'standard', 'expensive'], default: 'standard' }
 			},
 			tradeCredits: { type: Types.Boolean, required: false, default: true },
 			tradeCreditsSpecialists: { type: Types.Boolean, required: false, default: true },
 			tradeCost: { type: Types.Number, required: true, enum: [0, 5, 15, 25, 50, 100], default: 15 }, // TODO: This could be renamed.
-			tradeScanning: { type: Types.String, required: true, enum: ['all', 'scanned'], default: 'all' }
+			tradeScanning: { type: Types.String, required: true, enum: ['all', 'scanned'], default: 'all' },
+			populationCap: {
+				enabled: { type: Types.String, required: true, enum: ['enabled', 'disabled'], default: 'disabled' },
+				shipsPerStar: { type: Types.Number, required: true, min: 50, max: 1000, default: 100 }
+			}
 		},
 		diplomacy: {
 			enabled: { type: Types.String, required: true, enum: ['enabled', 'disabled'], default: 'disabled' },

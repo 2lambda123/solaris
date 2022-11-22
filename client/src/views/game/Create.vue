@@ -111,6 +111,15 @@
             </option>
           </select>
         </div>
+
+        <div class="mb-2">
+          <label for="spectators" class="col-form-label">Allow Spectators <help-tooltip tooltip="Allow players to invite users to spectate the game"></help-tooltip></label>
+          <select class="form-control" id="spectators" v-model="settings.general.spectators" :disabled="isCreatingGame">
+            <option v-for="opt in options.general.spectators" v-bind:key="opt.value" v-bind:value="opt.value">
+              {{ opt.text }}
+            </option>
+          </select>
+        </div>
       </view-collapse-panel>
 
       <view-collapse-panel title="Game Time Settings" :startsOpened="true">
@@ -305,7 +314,7 @@
         </div>
 
         <div class="mb-2" v-if="settings.galaxy.galaxyType !== 'custom'">
-          <label for="randomNebulas" class="col-form-label">Random Nebulas (<span class="text-warning">{{settings.specialGalaxy.randomNebulas}}%</span>) <help-tooltip tooltip="The percentage of random nebulas are generated in the galaxy - Nebulas hide ships at stars"/></label>
+          <label for="randomNebulas" class="col-form-label">Random Nebulas (<span class="text-warning">{{settings.specialGalaxy.randomNebulas}}%</span>) <help-tooltip tooltip="The percentage of random nebulas are generated in the galaxy - Nebulas conceal the infrastructure and ship counts at the star from all other players"/></label>
           <div class="col">
             <input type="range" min="0" max="50" step="1" class="form-range w-100" id="randomNebulas" v-model="settings.specialGalaxy.randomNebulas" :disabled="isCreatingGame">
           </div>
@@ -412,6 +421,15 @@
               </option>
             </select>
           </div>
+
+          <div class="mb-2">
+            <label for="starCaptureReward" class="col-form-label">Star Capture Rewards <help-tooltip tooltip="Determines whether economic infrastructure is destroyed on star capture and if the attacker is awarded cash for destroying them"/></label>
+            <select class="form-control" id="starCaptureReward" v-model="settings.specialGalaxy.starCaptureReward" :disabled="isCreatingGame">
+              <option v-for="opt in options.specialGalaxy.starCaptureReward" v-bind:key="opt.value" v-bind:value="opt.value">
+                {{ opt.text }}
+              </option>
+            </select>
+          </div>
         </div>
       </view-collapse-panel>
 
@@ -504,6 +522,24 @@
         </div>
       </view-collapse-panel>
 
+      <view-collapse-panel title="Ship Population Cap">
+        <div class="mb-2">
+          <label for="populationCapEnabled" class="col-form-label">Enabled <help-tooltip tooltip="If enabled, the maximum ship population per player will be restricted"/></label>
+          <select class="form-control" id="populationCapEnabled" v-model="settings.player.populationCap.enabled" :disabled="isCreatingGame">
+            <option v-for="opt in options.player.populationCap.enabled" v-bind:key="opt.value" v-bind:value="opt.value">
+              {{ opt.text }}
+            </option>
+          </select>
+        </div>
+
+        <div class="mb-2" v-if="settings.player.populationCap.enabled === 'enabled'">
+          <label for="populationCapShipsPerStar" class="col-form-label">Ships Per Star (<span class="text-warning">{{settings.player.populationCap.shipsPerStar}} Ships</span>) <help-tooltip tooltip="Determines the max population of ships per star"/></label>
+          <div class="col">
+            <input type="range" min="50" max="1000" step="50" class="form-range w-100" id="startingTechLevelSpecialists" v-model="settings.player.populationCap.shipsPerStar" :disabled="isCreatingGame">
+          </div>
+        </div>
+      </view-collapse-panel>
+
       <view-collapse-panel title="Formal Alliances">
         <div class="mb-2">
           <label for="diplomacy" class="col-form-label">Enabled <help-tooltip tooltip="If enabled, players can change their diplomatic status to allied or enemies - Allied players can orbit eachother's stars and support eachother in combat"/></label>
@@ -568,7 +604,7 @@
         </div>
 
         <div class="mb-2">
-          <label for="economyCost" class="col-form-label">Development Cost <help-tooltip tooltip="Determines how expensive infrastructure costs to build"/></label>
+          <label for="economyCost" class="col-form-label">Development Cost <help-tooltip tooltip="Determines how expensive infrastructure costs to build. If disabled, then one third of all stars will start with the starting infrastructure"/></label>
           <select class="form-control" id="economyCost" v-model="settings.player.developmentCost.economy" :disabled="isCreatingGame">
             <option v-for="opt in options.player.developmentCost" v-bind:key="opt.value" v-bind:value="opt.value">
               {{ opt.text }} Economy

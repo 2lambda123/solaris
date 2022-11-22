@@ -54,6 +54,12 @@
         "price": null
     },
     {
+        "key": "special_fog",
+        "name": "Victor (Dark Fogged Mode)",
+        "description": "Awarded to players who have won a dark fogged mode official game.",
+        "price": null
+    },
+    {
         "key": "special_ultraDark",
         "name": "Victor (Ultra Dark Mode)",
         "description": "Awarded to players who have won a ultra dark mode official game.",
@@ -105,6 +111,12 @@
         "key": "special_freeForAll",
         "name": "Victor (Free for All Mode)",
         "description": "Awarded to players who have won a free for all mode official game.",
+        "price": null
+    },
+    {
+        "key": "special_arcade",
+        "name": "Victor (Arcade Mode)",
+        "description": "Awarded to players who have won a arcade mode official game.",
         "price": null
     }
 ]

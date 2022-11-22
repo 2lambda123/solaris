@@ -67,6 +67,8 @@ import DiscordService from "../discord";
 import BasicAIService from "../basicAi";
 import UserLevelService from "../userLevel";
 import SpecialStarBanService from "../specialStarBan";
+import ShipService from "../ship";
+import SpectatorService from "../spectator";
 
 export interface DependencyContainer {
     config: Config,
@@ -137,4 +139,6 @@ export interface DependencyContainer {
     starContestedService: StarContestedService,
     gameFluxService: GameFluxService,
     notificationService: NotificationService,
+    shipService: ShipService,
+    spectatorService: SpectatorService,
 };

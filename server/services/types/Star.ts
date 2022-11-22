@@ -2,6 +2,7 @@ import { DBObjectId } from "./DBObjectId";
 import { InfrastructureUpgradeCosts } from "./InfrastructureUpgrade";
 import { Location } from "./Location";
 import { MapObject } from "./Map";
+import { PlayerTechnologyLevels } from "./Player";
 import { Specialist } from "./Specialist";
 
 export interface NaturalResources {
@@ -35,6 +36,7 @@ export interface Star extends MapObject {
     ships: number | null;
     shipsActual?: number;
     specialistId: number | null;
+    specialistExpireTick: number | null;
     homeStar: boolean;
     warpGate: boolean;
     isNebula: boolean;
@@ -51,6 +53,8 @@ export interface Star extends MapObject {
     targeted?: boolean;
     upgradeCosts?: InfrastructureUpgradeCosts;
     manufacturing?: number;
+    isInScanningRange?: boolean;
+    effectiveTechs?: PlayerTechnologyLevels;
 };
 
 export interface StarCaptureResult {
