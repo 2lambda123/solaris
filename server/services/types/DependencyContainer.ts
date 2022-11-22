@@ -120,6 +120,7 @@ export interface DependencyContainer {
     conversationService: ConversationService,
     reputationService: ReputationService,
     aiService: AIService,
+    basicAiService: BasicAIService,
     battleRoyaleService: BattleRoyaleService,
     starMovementService: StarMovementService,
     cacheService: CacheService,
