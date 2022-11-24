@@ -333,7 +333,8 @@ export default class AIService {
         player.aiState = {
             knownAttacks: [],
             startedClaims: [],
-            invasionsInProgress: []
+            invasionsInProgress: [],
+            goals: []
         };
     }
 
