@@ -1,6 +1,6 @@
 import {Game} from "./types/Game";
-import {Player, PlayerReputation} from "./types/Player";
-import {KnownAttack} from "./types/Ai";
+import {Player} from "./types/Player";
+import {AiState, DiplomaticGoal, EconomicalGoal, Goals, KnownAttack} from "./types/Ai";
 import CarrierService from "./carrier";
 import CombatService from "./combat";
 import DistanceService from "./distance";
@@ -17,10 +17,9 @@ import {CarrierWaypoint, CarrierWaypointActionType} from "./types/CarrierWaypoin
 import ReputationService from "./reputation";
 import DiplomacyService from "./diplomacy";
 import PlayerStatisticsService from "./playerStatistics";
-import {DBObjectId} from "./types/DBObjectId";
 import BasicAIService from "./basicAi";
 import PlayerAfkService from "./playerAfk";
-import {DiplomaticState, DiplomaticStatus} from "./types/Diplomacy";
+import {DiplomaticState} from "./types/Diplomacy";
 import ShipService from "./ship";
 
 const Heap = require('qheap');
@@ -350,6 +349,44 @@ export default class AIService {
         if (player.aiState.invasionsInProgress) {
             player.aiState.invasionsInProgress = player.aiState.invasionsInProgress.filter(invasion => invasion.arrivalTick > game.state.tick);
         }
+
+        this._updateGoals(game, player, player.aiState, context);
+    }
+
+    _updateGoals(game: Game, player: Player, aiState: AiState, context: Context) {
+        const oldGoals = aiState?.goals || [];
+
+        console.log("Old goals: ");
+        for (const oldGoal of oldGoals) {
+            console.log(oldGoal);
+        }
+        console.log("________");
+
+        const newGoals: Goals[] = [];
+
+        for (const [otherPlayerId, relation] of context.playerRelations) {
+            if (relation.isNeighbor) {
+                const oldGoal = oldGoals.find(g => g.concerningPlayer === otherPlayerId);
+
+                const newGoal = {
+                    concerningPlayer: otherPlayerId,
+                    diploGoal: this._evaluateDiploGoal(game, player, context, relation, oldGoal?.diploGoal),
+                    econGoals: this._evaluateEconGoals(game, player, context, relation, oldGoal?.econGoals)
+                }
+
+                newGoals.push(newGoal);
+            }
+        }
+
+        aiState.goals = newGoals;
+    }
+
+    _evaluateDiploGoal(game: Game, player: Player, context: Context, relation: PlayerRelation, diploGoal: DiplomaticGoal | undefined): DiplomaticGoal {
+        return DiplomaticGoal.BeFriendly;
+    }
+
+    _evaluateEconGoals(game: Game, player: Player, context: Context, relation: PlayerRelation, econGoals: EconomicalGoal[] | undefined): EconomicalGoal[] {
+        return [];
     }
 
     _clearState(player: Player) {
@@ -1459,7 +1496,7 @@ export default class AIService {
         }
     }
 
-    private _isNeighboringPlayer(otherPlayer: Player, reachableStars: StarGraph, starsById: Map<string, Star>): boolean {
+    _isNeighboringPlayer(otherPlayer: Player, reachableStars: StarGraph, starsById: Map<string, Star>): boolean {
         for (const [_playerStar, reachables] of reachableStars) {
             for (const reachableStarId of reachables) {
                 const reachableStarOwner = starsById.get(reachableStarId)?.ownedByPlayerId;
