@@ -111,6 +111,7 @@ interface PlayerRelation {
     isFriendly: boolean;
     diplomacyState: DiplomaticState;
     comparison: PlayerComparison;
+    isNeighbor: boolean;
 }
 
 type PlayerRelations = Map<string, PlayerRelation>;
@@ -374,11 +375,13 @@ export default class AIService {
             starsById.set(star._id.toString(), star);
         }
 
-        const playerRelations = this._createPlayerRelations(game, player);
-
-        const traversableStars = game.galaxy.stars.filter(star => this._isTraversableStar(game, player, playerRelations, star));
         // All stars (belonging to anyone) that can be reached directly from a player star
         const allReachableFromPlayerStars = this._computeStarGraph(starsById, game, player, playerStars, game.galaxy.stars, this._getHyperspaceRangeExternal(game, player));
+
+        const playerRelations = this._createPlayerRelations(game, player, allReachableFromPlayerStars, starsById);
+
+        // Stars that can be used to station carriers without combat (own stars + allies)
+        const traversableStars = game.galaxy.stars.filter(star => this._isTraversableStar(game, player, playerRelations, star));
         // All stars (belonging to anyone) that can reach a player star (with our players range)
         const allCanReachPlayerStars = this._computeStarGraph(starsById, game, player, game.galaxy.stars, playerStars, this._getHyperspaceRangeExternal(game, player));
         // All stars (unowned or owned by this player) that can be reached from player stars
@@ -1323,7 +1326,7 @@ export default class AIService {
         player.aiState = null;
     }
 
-    _createPlayerRelations(game: Game, player: Player): PlayerRelations {
+    _createPlayerRelations(game: Game, player: Player, reachableStars: StarGraph, starsById: Map<string, Star>): PlayerRelations {
         const relations = new Map<string, PlayerRelation>();
 
         for (const otherPlayer of game.galaxy.players) {
@@ -1331,7 +1334,8 @@ export default class AIService {
             const relation = {
                 isFriendly: this._hasFriendlyReputation(player, otherPlayer),
                 diplomacyState,
-                comparison: this._createPlayerComparison(game, player, otherPlayer)
+                comparison: this._createPlayerComparison(game, player, otherPlayer),
+                isNeighbor: this._isNeighboringPlayer(otherPlayer, reachableStars, starsById)
             }
             relations.set(player._id.toString(), relation);
         }
@@ -1452,5 +1456,19 @@ export default class AIService {
                 await this.diplomacyService.declareNeutral(game, player._id, otherPlayer._id, false);
             }
         }
+    }
+
+    private _isNeighboringPlayer(otherPlayer: Player, reachableStars: StarGraph, starsById: Map<string, Star>): boolean {
+        for (const [_playerStar, reachables] of reachableStars) {
+            for (const reachableStarId of reachables) {
+                const reachableStarOwner = starsById.get(reachableStarId)?.ownedByPlayerId;
+
+                if (reachableStarOwner && reachableStarOwner === otherPlayer._id) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 }
