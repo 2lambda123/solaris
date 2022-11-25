@@ -1,5 +1,5 @@
 import {Game} from "./types/Game";
-import {Player} from "./types/Player";
+import {Player, ResearchTypeNotRandom} from "./types/Player";
 import {AiState, DiplomaticGoal, EconomicalGoal, Goals, KnownAttack} from "./types/Ai";
 import CarrierService from "./carrier";
 import CombatService from "./combat";
@@ -121,6 +121,7 @@ interface Context {
     playerStars: Star[];
     playerCarriers: Carrier[];
     starsById: Map<string, Star>;
+    playersById: Map<string, Player>;
     allReachableFromPlayerStars: StarGraph;
     freelyReachableFromPlayerStars: StarGraph;
     reachablePlayerStars: StarGraph;
@@ -249,15 +250,7 @@ export default class AIService {
 
         this._updateState(game, player, context);
 
-        if (isFirstTickOfCycle) {
-            await this._handleBulkUpgradeStates(game, player, context);
-            await this._playFirstTick(game, player);
-        }
-
-        if (isLastTickOfCycle) {
-            await this._handleBulkUpgradeStates(game, player, context);
-            await this._playLastTick(game, player);
-        }
+        await this._handleUpgradesAndResearch(game, player, context, isFirstTickOfCycle, isLastTickOfCycle);
 
         const orders = this._gatherOrders(game, player, context);
         const assignments = await this._gatherAssignments(game, player, context);
@@ -460,6 +453,12 @@ export default class AIService {
             starsById.set(star._id.toString(), star);
         }
 
+        const playersById = new Map<string, Player>();
+
+        for (const player of game.galaxy.players) {
+            playersById.set(player._id.toString(), player);
+        }
+
         // All stars (belonging to anyone) that can be reached directly from a player star
         const allReachableFromPlayerStars = this._computeStarGraph(starsById, game, player, playerStars, game.galaxy.stars, this._getHyperspaceRangeExternal(game, player));
 
@@ -554,6 +553,7 @@ export default class AIService {
             playerStars,
             playerCarriers,
             starsById,
+            playersById,
             allReachableFromPlayerStars,
             freelyReachableFromPlayerStars,
             allCanReachPlayerStars,
@@ -1555,5 +1555,75 @@ export default class AIService {
         }
 
         return false;
+    }
+
+    async _handleUpgradesAndResearch(game: Game, player: Player, context: Context, isFirstTickOfCycle: boolean, isLastTickOfCycle: boolean) {
+        const goals = player.aiState?.goals || [];
+
+        await this._assignNextResearch(game, player, context, goals);
+
+        if (isFirstTickOfCycle) {
+            await this._handleBulkUpgradeStates(game, player, context);
+            await this._playFirstTick(game, player);
+        }
+
+        if (isLastTickOfCycle) {
+            await this._handleBulkUpgradeStates(game, player, context);
+            await this._playLastTick(game, player);
+        }
+    }
+
+    async _assignNextResearch(game: Game, player: Player, context: Context, goals: Goals[]) {
+        const currentResearch = player.researchingNow;
+
+        const currentLevels: { [key in ResearchTypeNotRandom]: number } = {
+            "scanning": player.research.scanning.level,
+            "hyperspace": player.research.hyperspace.level,
+            "terraforming": player.research.terraforming.level,
+            "experimentation": player.research.experimentation.level,
+            "banking": player.research.banking.level,
+            "weapons": player.research.weapons.level,
+            "specialists": player.research.specialists.level,
+            "manufacturing": player.research.manufacturing.level
+        };
+
+        // Since we want to find the next best research, we need to take the current one into account
+        currentLevels[currentResearch] += 1;
+
+        // Find out if any goals require us to research
+        const goalRequiredResearch = new Map<ResearchTypeNotRandom, number>();
+
+        const addGoalResearch = (r, l) => {
+            const delta = l - currentLevels[r];
+            const oldDelta = goalRequiredResearch.get(r) || 0;
+            const newDelta = Math.max(oldDelta, delta);
+            goalRequiredResearch.set(r, newDelta);
+        }
+
+        for (const goal of goals) {
+            const player = context.playersById.get(goal.concerningPlayer)!!;
+
+            for (const econGoal of goal.econGoals) {
+                if (econGoal === EconomicalGoal.Weapons) {
+                    addGoalResearch("weapons", player.research.weapons.level);
+                }
+
+                if (econGoal === EconomicalGoal.Terraforming) {
+                    addGoalResearch("terraforming", player.research.terraforming.level);
+                }
+            }
+        }
+
+        const goalRequiredByHighestDelta = Array.from(goalRequiredResearch.entries()).sort(([_r, l], [_r2, l2]) => l2 - l).map(([r, _l]) => r);
+
+        // Find first researchable goal required research
+        for (const researchByGoal of goalRequiredByHighestDelta) {
+            if (this.technologyService.isTechnologyResearchable(game, researchByGoal)) {
+                player.researchingNext = researchByGoal;
+                return;
+            }
+        }
+
+        //TODO: Find research otherwise
     }
 }
