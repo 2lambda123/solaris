@@ -41,6 +41,8 @@ const BORDER_STAR_ANGLE_THRESHOLD_DEGREES = 120;
 
 const TREAT_FRIENDLY_REPUTATION = 3;
 
+const STRENGTH_LIMIT_FOR_ATTACK = 4;
+
 enum AiAction {
     DefendStar,
     ClaimStar,
@@ -368,10 +370,13 @@ export default class AIService {
             if (relation.isNeighbor) {
                 const oldGoal = oldGoals.find(g => g.concerningPlayer === otherPlayerId);
 
+                const diploGoal = this._evaluateDiploGoal(game, player, context, relation, oldGoal?.diploGoal);
+                const econGoals = this._evaluateEconGoals(game, player, context, relation, oldGoal?.econGoals, diploGoal)
+
                 const newGoal = {
                     concerningPlayer: otherPlayerId,
-                    diploGoal: this._evaluateDiploGoal(game, player, context, relation, oldGoal?.diploGoal),
-                    econGoals: this._evaluateEconGoals(game, player, context, relation, oldGoal?.econGoals)
+                    diploGoal,
+                    econGoals
                 }
 
                 newGoals.push(newGoal);
@@ -382,10 +387,24 @@ export default class AIService {
     }
 
     _evaluateDiploGoal(game: Game, player: Player, context: Context, relation: PlayerRelation, diploGoal: DiplomaticGoal | undefined): DiplomaticGoal {
-        return DiplomaticGoal.BeFriendly;
+        if (relation.isFriendly) {
+            return DiplomaticGoal.BeFriendly; //For now, the AI plays nice and does not murder its friends. This will be changed when the robot apocalypse is ready.
+        } else {
+            const comp = relation.comparison;
+            const strengthScore = Number(comp.hasMoreShips) +
+                Number(comp.hasMoreShipsProduction) * 2 +
+                Number(comp.hasMoreEconomy) * 2 +
+                (Number(comp.hasMoreScience) + Number(comp.hasMoreWeapons)) * 2;
+
+            if (strengthScore < STRENGTH_LIMIT_FOR_ATTACK) {
+                return DiplomaticGoal.Conquer;
+            } else {
+                return DiplomaticGoal.BeFriendly;
+            }
+        }
     }
 
-    _evaluateEconGoals(game: Game, player: Player, context: Context, relation: PlayerRelation, econGoals: EconomicalGoal[] | undefined): EconomicalGoal[] {
+    _evaluateEconGoals(game: Game, player: Player, context: Context, relation: PlayerRelation, econGoals: EconomicalGoal[] | undefined, diploGoal: DiplomaticGoal): EconomicalGoal[] {
         return [];
     }
 
