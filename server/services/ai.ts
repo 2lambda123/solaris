@@ -405,7 +405,35 @@ export default class AIService {
     }
 
     _evaluateEconGoals(game: Game, player: Player, context: Context, relation: PlayerRelation, econGoals: EconomicalGoal[] | undefined, diploGoal: DiplomaticGoal): EconomicalGoal[] {
-        return [];
+        if (diploGoal === DiplomaticGoal.Conquer) {
+            // Make sure we can conquer properly
+            const comparison = relation.comparison;
+            const goals: EconomicalGoal[] = [];
+
+            if (comparison.hasMoreWeapons) {
+                goals.push(EconomicalGoal.Weapons);
+            }
+
+            if (comparison.hasMoreEconomy) {
+                goals.push(EconomicalGoal.Economy);
+            }
+
+            if (comparison.hasMoreShipsProduction) {
+                goals.push(EconomicalGoal.ShipProduction);
+            }
+
+            if (comparison.hasMoreTerraforming) {
+                goals.push(EconomicalGoal.Terraforming);
+            }
+
+            if (comparison.hasMoreScience) {
+                goals.push(EconomicalGoal.Science);
+            }
+
+            return goals;
+        } else {
+            return []; // For now, nothing specific to do here since we intend to keep peaceful
+        }
     }
 
     _clearState(player: Player) {
