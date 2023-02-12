@@ -190,8 +190,8 @@ export default class AIService {
     playerStatisticsService: PlayerStatisticsService;
     basicAIService: BasicAIService;
     shipService: ShipService;
-
     randomService: RandomService;
+    isDebugMode: boolean;
 
     constructor(
         starUpgradeService: StarUpgradeService,
@@ -227,6 +227,7 @@ export default class AIService {
         this.basicAIService = basicAIService;
         this.shipService = shipService;
         this.randomService = randomService;
+        this.isDebugMode = Boolean(process.env.AI_DEBUG);
     }
 
     async play(game: Game, player: Player) {
@@ -1636,6 +1637,7 @@ export default class AIService {
         // Find first researchable goal required research
         for (const researchByGoal of goalRequiredByHighestDelta) {
             if (this.technologyService.isTechnologyResearchable(game, researchByGoal)) {
+                this._debug(game, player, "Research chosen by research goal: " + researchByGoal)
                 player.researchingNext = researchByGoal;
                 return;
             }
@@ -1661,6 +1663,7 @@ export default class AIService {
             for (const [research, prio] of researchPriorities) {
                 if (num >= c && num < c + prio) {
                     player.researchingNext = research;
+                    this._debug(game, player, "Research chosen by weighted random: " + research);
                     return;
                 }
 
@@ -1670,5 +1673,12 @@ export default class AIService {
 
         // Fallback for cases where tech is not researchable
         player.researchingNext = 'random';
+        this._debug(game, player, "Research fallback chosen")
+    }
+
+    _debug(game: Game, player: Player, msg: string) {
+        if (this.isDebugMode) {
+            console.log(`[${game.settings.general.name}] AI (${player.alias}): ${msg}`);
+        }
     }
 }
