@@ -1,5 +1,5 @@
 import {Game} from "./types/Game";
-import {Player, ResearchTypeNotRandom} from "./types/Player";
+import {Player, ResearchType, ResearchTypeNotRandom} from "./types/Player";
 import {AiState, DiplomaticGoal, EconomicalGoal, Goals, KnownAttack} from "./types/Ai";
 import CarrierService from "./carrier";
 import CombatService from "./combat";
@@ -21,6 +21,7 @@ import BasicAIService from "./basicAi";
 import PlayerAfkService from "./playerAfk";
 import {DiplomaticState} from "./types/Diplomacy";
 import ShipService from "./ship";
+import RandomService from "./random";
 
 const Heap = require('qheap');
 const mongoose = require("mongoose");
@@ -156,6 +157,18 @@ type AssignmentNextFilter = (trace: TracePoint[], nextStarId: string) => boolean
 
 type AssignmentFilter = (assignment: Assignment) => boolean;
 
+const RESEARCH_PRIORITIES_DEFAULT: [ResearchType, number][] = [
+    ['banking', 2],
+    ['experimentation', 1],
+    ['scanning', 0], // the AI is a cheater anyway
+    ['hyperspace', 1],
+    ['terraforming', 3],
+    ['weapons', 4],
+    ['manufacturing', 3],
+    ['specialists', 3]
+]
+
+
 // IMPORTANT IMPLEMENTATION NOTES
 // During AI tick, care must be taken to NEVER write any changes to the database.
 // This is performed automatically by mongoose (when calling game.save()).
@@ -178,6 +191,8 @@ export default class AIService {
     basicAIService: BasicAIService;
     shipService: ShipService;
 
+    randomService: RandomService;
+
     constructor(
         starUpgradeService: StarUpgradeService,
         carrierService: CarrierService,
@@ -193,7 +208,8 @@ export default class AIService {
         diplomacyService: DiplomacyService,
         playerStatisticsService: PlayerStatisticsService,
         shipService: ShipService,
-        basicAIService: BasicAIService
+        basicAIService: BasicAIService,
+        randomService: RandomService
     ) {
         this.starUpgradeService = starUpgradeService;
         this.carrierService = carrierService;
@@ -210,6 +226,7 @@ export default class AIService {
         this.playerStatisticsService = playerStatisticsService;
         this.basicAIService = basicAIService;
         this.shipService = shipService;
+        this.randomService = randomService;
     }
 
     async play(game: Game, player: Player) {
@@ -1624,6 +1641,34 @@ export default class AIService {
             }
         }
 
-        //TODO: Find research otherwise
+        // For now, we will choose the next research by weighted random. This can be improved in the future.
+
+        const researchPriorities = RESEARCH_PRIORITIES_DEFAULT.filter(([research, _]) => this.technologyService.isTechnologyResearchable(game, research));
+
+        if (researchPriorities.length === 0) {
+            player.researchingNext = 'random';
+            return;
+        }
+
+        const sumOfPriorities = researchPriorities.map(([_, prio]) => prio).reduce((a, b) => a + b, 0);
+
+        const maxTries = researchPriorities.length;
+
+        for (let i = 0; i < maxTries; i++) {
+            const num = this.randomService.getRandomNumber(sumOfPriorities);
+
+            let c = 0;
+            for (const [research, prio] of researchPriorities) {
+                if (num >= c && num < c + prio) {
+                    player.researchingNext = research;
+                    return;
+                }
+
+                c += prio;
+            }
+        }
+
+        // Fallback for cases where tech is not researchable
+        player.researchingNext = 'random';
     }
 }
