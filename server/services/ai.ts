@@ -157,7 +157,7 @@ type AssignmentNextFilter = (trace: TracePoint[], nextStarId: string) => boolean
 
 type AssignmentFilter = (assignment: Assignment) => boolean;
 
-const RESEARCH_PRIORITIES_DEFAULT: [ResearchType, number][] = [
+const RESEARCH_PRIORITIES_DEFAULT: [ResearchTypeNotRandom, number][] = [
     ['banking', 2],
     ['experimentation', 1],
     ['scanning', 0], // the AI is a cheater anyway
