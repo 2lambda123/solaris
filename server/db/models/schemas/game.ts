@@ -98,7 +98,7 @@ const schema = new Schema({
 			orbitSpeed: { type: Types.Number, required: false, min: 1, max: 5, default: 3 }
 		},
         player: {
-			startingStars: { type: Types.Number, required: true, min: 1, max: 10, default: 6 },
+			startingStars: { type: Types.Number, required: true, min: 1, max: 30, default: 6 },
 			startingCredits: { type: Types.Number, required: true, min: 25, max: 3000, default: 500 },
 			startingCreditsSpecialists: { type: Types.Number, required: true, min: 0, max: 100, default: 5 },
 			startingShips: { type: Types.Number, required: true, min: 0, max: 100, default: 10 },
@@ -126,7 +126,7 @@ const schema = new Schema({
 			enabled: { type: Types.String, required: true, enum: ['enabled', 'disabled'], default: 'disabled' },
 			tradeRestricted: { type: Types.String, required: true, enum: ['enabled', 'disabled'], default: 'disabled' },
 			maxAlliances: { type: Types.Number, required: true, min: 1, max: 31, default: 31 },
-			upkeepCost: { type: Types.String, required: true, enum: ['none', 'cheap', 'standard', 'expensive'], default: 'none' },
+			upkeepCost: { type: Types.String, required: true, enum: ['none', 'cheap', 'standard', 'expensive', 'crazyExpensive'], default: 'none' },
 			globalEvents: { type: Types.String, required: true, enum: ['enabled', 'disabled'], default: 'disabled' }
 		},
 		technology: {
@@ -241,7 +241,7 @@ const schema = new Schema({
 				cheap: { type: Types.Number, required: true, default: 0.05 },
 				standard: { type: Types.Number, required: true, default: 0.10 },
 				expensive: { type: Types.Number, required: true, default: 0.15 },
-        crazyExpensive: { type: Types.Number, required: true, default: 0.25 }
+        		crazyExpensive: { type: Types.Number, required: true, default: 0.25 }
 			}
 		},
 		player: {
