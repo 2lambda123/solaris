@@ -369,11 +369,11 @@ export default class AIService {
     _updateGoals(game: Game, player: Player, aiState: AiState, context: Context) {
         const oldGoals = aiState?.goals || [];
 
-        console.log("Old goals: ");
+        this._debug(game, player, "Old goals: ");
         for (const oldGoal of oldGoals) {
-            console.log(oldGoal);
+            this._debug(game, player, JSON.stringify(oldGoal));
         }
-        console.log("________");
+        this._debug(game, player, "________");
 
         const newGoals: Goals[] = [];
 
@@ -382,7 +382,11 @@ export default class AIService {
                 const oldGoal = oldGoals.find(g => g.concerningPlayer === otherPlayerId);
 
                 const diploGoal = this._evaluateDiploGoal(game, player, context, relation, oldGoal?.diploGoal);
+                const otherPlayerName = context.playersById.get(otherPlayerId)!!.alias;
+                this._debug(game, player, "Diplomacy goal for " +  otherPlayerName + "changed from " + oldGoal?.diploGoal + " to " + diploGoal);
+
                 const econGoals = this._evaluateEconGoals(game, player, context, relation, oldGoal?.econGoals, diploGoal)
+                this._debug(game, player, "Economy goals for " +  otherPlayerName + "changed from " + oldGoal?.econGoals.join(", ") + " to " + econGoals.join(", "));
 
                 const newGoal = {
                     concerningPlayer: otherPlayerId,
@@ -1442,6 +1446,8 @@ export default class AIService {
             }
             relations.set(player._id.toString(), relation);
         }
+
+        relations.forEach((rel, pl) => this._debug(game, player, "Relation to player " + pl + ": " + JSON.stringify(rel)));
 
         return relations;
     }
