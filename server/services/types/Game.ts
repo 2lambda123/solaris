@@ -77,6 +77,7 @@ export interface GameSettings {
 		password?: string | null;
 		passwordRequired: boolean;
 		playerLimit: number;
+		prefillBots: number | null;
 		playerType: GamePlayerType;
 		anonymity: GamePlayerAnonymity;
 		playerOnlineStatus: GamePlayerOnlineStatus;

@@ -122,6 +122,12 @@ export default class GameCreateService {
             settings.general.passwordRequired = true;
         }
 
+        if (settings.general.prefillBots) {
+            if (settings.general.prefillBots < 0 || settings.general.prefillBots > settings.general.playerLimit - 1) {
+                throw new ValidationError('Prefill bots must be between 0 and player limit - 1.');
+            }
+        }
+
         let game = new this.gameModel({
             settings
         }) as Game;
