@@ -113,6 +113,13 @@
         </div>
 
         <div class="mb-2">
+          <label for="prefillBots" class="col-form-label">Prefill <span class="text-warning">{{settings.general.prefillBots}} slot(s)</span> with bots <help-tooltip tooltip="Fills a number of slots with bots from the start"></help-tooltip></label>
+          <div class="col">
+            <input type="range" min="0" :max="this.settings.general.playerLimit - 1" step="1" class="form-range w-100" id="prefillBots" v-model.number="settings.general.prefillBots" :disabled="isCreatingGame">
+          </div>
+        </div>
+
+        <div class="mb-2">
           <label for="spectators" class="col-form-label">Allow Spectators <help-tooltip tooltip="Allow players to invite users to spectate the game"></help-tooltip></label>
           <select class="form-control" id="spectators" v-model="settings.general.spectators" :disabled="isCreatingGame">
             <option v-for="opt in options.general.spectators" v-bind:key="opt.value" v-bind:value="opt.value">
@@ -444,7 +451,7 @@
 
       <view-collapse-panel title="Orbital Mechanics">
         <p class="mb-1 text-warning" v-if="settings.orbitalMechanics.enabled === 'enabled'">Warning: carrier-to-carrier combat is auto-disabled in orbital games.</p>
-        
+
         <div class="mb-2">
           <label for="orbitalMechanicsEnabled" class="col-form-label">Galaxy Rotation <help-tooltip tooltip="If enabled, orbits stars and carriers around the center of the galaxy every tick"/></label>
           <select class="form-control" id="orbitalMechanicsEnabled" v-model="settings.orbitalMechanics.enabled" :disabled="isCreatingGame">
