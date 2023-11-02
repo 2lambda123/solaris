@@ -1,5 +1,5 @@
 import ValidationError from '../errors/validation';
-import { Game, GameSettings } from './types/Game';
+import {Game, GameSettings, Team} from './types/Game';
 import AchievementService from './achievement';
 import ConversationService from './conversation';
 import GameCreateValidationService from './gameCreateValidation';
@@ -16,6 +16,10 @@ import UserService from './user';
 import GameJoinService from './gameJoin';
 import SpecialStarBanService from './specialStarBan';
 import StarService from './star';
+import DiplomacyService from "./diplomacy";
+import mongoose from "mongoose";
+import {DBObjectId} from "./types/DBObjectId";
+import {shuffle} from "./utils";
 
 const RANDOM_NAME_STRING = '[[[RANDOM]]]';
 
@@ -37,6 +41,7 @@ export default class GameCreateService {
     specialStarBanService: SpecialStarBanService;
     gameTypeService: GameTypeService;
     starService: StarService;
+    diplomacyService: DiplomacyService;
 
     constructor(
         gameModel,
@@ -55,7 +60,8 @@ export default class GameCreateService {
         specialistBanService: SpecialistBanService,
         specialStarBanService: SpecialStarBanService,
         gameTypeService: GameTypeService,
-        starService: StarService
+        starService: StarService,
+        diplomacyService: DiplomacyService
     ) {
         this.gameModel = gameModel;
         this.gameJoinService = gameJoinService;
@@ -74,6 +80,7 @@ export default class GameCreateService {
         this.specialStarBanService = specialStarBanService;
         this.gameTypeService = gameTypeService;
         this.starService = starService;
+        this.diplomacyService = diplomacyService;
     }
 
     async create(settings: GameSettings) {
@@ -120,6 +127,35 @@ export default class GameCreateService {
         if (settings.general.password) {
             settings.general.password = await this.passwordService.hash(settings.general.password);
             settings.general.passwordRequired = true;
+        }
+
+        // Validate team conquest settings
+        if (settings.general.mode === 'teamConquest') {
+            const teamsCount = settings.conquest?.teamsCount;
+
+            if (!teamsCount) {
+                throw new ValidationError("Team count not provided");
+            }
+
+            const valid = Boolean(teamsCount &&
+                settings.general.playerLimit >= 4 &&
+                settings.general.playerLimit % teamsCount === 0);
+
+            if (!valid) {
+                throw new ValidationError(`The number of players must be larger than 3 and divisible by the number of teams.`);
+            }
+
+            if (settings.diplomacy?.enabled !== 'enabled') {
+                throw new ValidationError('Diplomacy needs to be enabled for a team game.');
+            }
+
+            if (settings.diplomacy?.lockedAlliances !== 'enabled') {
+                throw new ValidationError('Locked alliances needs to be enabled for a team game.');
+            }
+
+            if (settings.diplomacy?.maxAlliances !== (settings.general.playerLimit / teamsCount) - 1) {
+                throw new ValidationError('Alliance limit too low for team size.');
+            }
         }
 
         let game = new this.gameModel({
@@ -175,7 +211,9 @@ export default class GameCreateService {
         }
 
         // Clamp max alliances if its invalid (minimum of 1)
-        game.settings.diplomacy.maxAlliances = Math.max(1, Math.min(game.settings.diplomacy.maxAlliances, game.settings.general.playerLimit - 1));
+        let lockedAllianceMod = game.settings.diplomacy.lockedAlliances === 'enabled'
+            && game.settings.general.playerLimit >= 3 ? 1 : 0;
+        game.settings.diplomacy.maxAlliances = Math.max(1, Math.min(game.settings.diplomacy.maxAlliances, game.settings.general.playerLimit - 1 - lockedAllianceMod));
         
         // If the game name contains a special string, then replace it with a random name.
         if (game.settings.general.name.indexOf(RANDOM_NAME_STRING) > -1) {
@@ -244,6 +282,8 @@ export default class GameCreateService {
 
         this._setGalaxyCenter(game);
 
+        await this._setupTeams(game);
+
         if (isTutorial) {
             this._setupTutorialPlayers(game);
         } else {
@@ -269,8 +309,50 @@ export default class GameCreateService {
         game.constants.distances.galaxyCenterLocation = this.mapService.getGalaxyCenter(starLocations);
     }
 
+    async _setupTeams(game: Game) {
+        if (game.settings.general.mode !== 'teamConquest') {
+            return;
+        }
+
+        game.galaxy.teams = [];
+
+        const teamsNumber = game.settings.conquest.teamsCount;
+
+        if (!teamsNumber) {
+            throw new ValidationError("Team count not provided");
+        }
+
+        const players = game.galaxy.players.slice();
+        shuffle(players);
+
+        const playersPerTeam = players.length / teamsNumber;
+
+        for (let ti = 0; ti < teamsNumber; ti++) {
+            const playersForTeam = players.slice(ti * playersPerTeam, (ti + 1) * playersPerTeam);
+
+            const team: Team = {
+                _id: new mongoose.Types.ObjectId() as any,
+                name: `Team ${ti + 1}`,
+                players: playersForTeam.map(p => p._id)
+            };
+
+            game.galaxy.teams.push(team);
+
+            // Setup diplomacy states
+            for (let pi1 = 0; pi1 < playersForTeam.length; pi1++) {
+                for (let pi2 = 0; pi2 < playersForTeam.length; pi2++) {
+                    if (pi1 === pi2) {
+                        continue;
+                    }
+
+                    await this.diplomacyService.declareAlly(game, playersForTeam[pi1]._id, playersForTeam[pi2]._id, false);
+                }
+            }
+        }
+    }
+
     _calculateStarsForVictory(game: Game) {
-        if (game.settings.general.mode === 'conquest') {
+        if (game.settings.general.mode === 'conquest' || game.settings.general.mode === 'teamConquest') {
             // TODO: Find a better place for this as its shared in the star service.
             switch (game.settings.conquest.victoryCondition) {
                 case 'starPercentage':

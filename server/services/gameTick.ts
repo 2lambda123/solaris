@@ -12,7 +12,7 @@ import GameService from "./game";
 import GameStateService from "./gameState";
 import GameTypeService from "./gameType";
 import HistoryService from "./history";
-import LeaderboardService from "./leaderboard";
+import LeaderboardService, {GameWinner} from "./leaderboard";
 import StarMovementService from "./starMovement";
 import PlayerService from "./player";
 import ReputationService from "./reputation";
@@ -770,13 +770,24 @@ export default class GameTickService extends EventEmitter {
     async _gameWinCheck(game: Game, gameUsers: User[]) {
         const isTutorialGame = this.gameTypeService.isTutorialGame(game);
 
+
         // Update the leaderboard state here so we can keep track of positions
         // without having to actually calculate it.
-        let leaderboard = this.leaderboardService.getGameLeaderboard(game).leaderboard;
+        const leaderboard = this.leaderboardService.getGameLeaderboard(game).leaderboard;
 
         game.state.leaderboard = leaderboard.map(l => l.player._id);
 
-        let winner = this.leaderboardService.getGameWinner(game, leaderboard);
+        let winner: GameWinner | null;
+
+        if (this.gameTypeService.isTeamConquestGame(game)) {
+            const teamLeaderboard = this.leaderboardService.getTeamLeaderboard(game)!.leaderboard;
+
+            game.state.teamLeaderboard = teamLeaderboard.map(t => t.team._id);
+
+            winner = this.leaderboardService.getGameWinnerTeam(game, teamLeaderboard);
+        } else {
+            winner = this.leaderboardService.getGameWinner(game, leaderboard);
+        }
 
         if (winner) {
             this.gameStateService.finishGame(game, winner);
@@ -797,7 +808,7 @@ export default class GameTickService extends EventEmitter {
                 // Mark all players as established regardless of game length.
                 this.leaderboardService.markNonAFKPlayersAsEstablishedPlayers(game, gameUsers);
                 this.leaderboardService.incrementPlayersCompletedAchievement(game, gameUsers);
-    
+
                 let e: GameEndedEvent = {
                     gameId: game._id,
                     gameTick: game.state.tick,
@@ -814,6 +825,11 @@ export default class GameTickService extends EventEmitter {
     }
 
     _awardEndGameRank(game: Game, gameUsers: User[], awardCredits: boolean) {
+        // TODO: Rank for team games
+        if (this.gameTypeService.isTeamConquestGame(game)) {
+            return null;
+        }
+
         let rankingResult: GameRankingResult | null = null;
     
         // There must have been at least X production ticks in order for

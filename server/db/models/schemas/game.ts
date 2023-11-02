@@ -1,3 +1,5 @@
+import {Team} from "../../../services/types/Game";
+
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 const Types = Schema.Types;
@@ -6,6 +8,7 @@ import PlayerSchema from './player';
 import StarSchema from './star';
 import CarrierSchema from './carrier';
 import ConversationSchema from './conversation';
+import TeamSchema from './team';
 
 const schema = new Schema({
     settings: {
@@ -38,7 +41,7 @@ const schema = new Schema({
 				'special_arcade'
 			], default: 'custom' },
 			mode: { type: Types.String, required: true, enum: [
-				'conquest', 'battleRoyale', 'kingOfTheHill'
+				'conquest', 'battleRoyale', 'kingOfTheHill', 'teamConquest'
 			], default: 'conquest' },
 			featured: { type: Types.Boolean, required: false, default: false },
 			password: { type: Types.String, required: false, default: null },
@@ -89,7 +92,8 @@ const schema = new Schema({
 		conquest: {
 			victoryCondition: { type: Types.String, required: true, enum: ['starPercentage', 'homeStarPercentage'], default: 'starPercentage' },
 			victoryPercentage: { type: Types.Number, required: true, enum: [25, 33, 50, 66, 75, 90, 100], default: 50 },
-			capitalStarElimination: { type: Types.String, required: true, enum: ['enabled', 'disabled'], default: 'disabled' }
+			capitalStarElimination: { type: Types.String, required: true, enum: ['enabled', 'disabled'], default: 'disabled' },
+			teamsCount: { type: Types.Number, required: false, default: null }
 		},
 		kingOfTheHill: {
 			productionCycles: { type: Types.Number, required: false, min: 1, max: 25, default: 10 }
@@ -127,6 +131,7 @@ const schema = new Schema({
 		diplomacy: {
 			enabled: { type: Types.String, required: true, enum: ['enabled', 'disabled'], default: 'disabled' },
 			tradeRestricted: { type: Types.String, required: true, enum: ['enabled', 'disabled'], default: 'disabled' },
+			lockedAlliances: { type: Types.String, required: true, enum: ['enabled', 'disabled'], default: 'disabled' },
 			maxAlliances: { type: Types.Number, required: true, min: 1, max: 31, default: 31 },
 			upkeepCost: { type: Types.String, required: true, enum: ['none', 'cheap', 'standard', 'expensive', 'crazyExpensive'], default: 'none' },
 			globalEvents: { type: Types.String, required: true, enum: ['enabled', 'disabled'], default: 'disabled' }
@@ -174,7 +179,8 @@ const schema = new Schema({
     galaxy: {
         players: [PlayerSchema],
 		stars: [StarSchema],
-		carriers: [CarrierSchema]
+		carriers: [CarrierSchema],
+		teams: [TeamSchema],
 	},
 	conversations: [ConversationSchema],
 	state: {
@@ -190,6 +196,7 @@ const schema = new Schema({
 		starsForVictory: { type: Types.Number, required: true },
 		players: { type: Types.Number, required: true, default: 0 },
 		winner: { type: Types.ObjectId, required: false, default: null },
+		winningTeam: { type: Types.ObjectId, required: false, default: null },
 		cleaned: { type: Types.Boolean, required: false, default: false }, // Represents if the events and history have been deleted.
 		leaderboard: [{ type: Types.ObjectId, required: false }]
 	},

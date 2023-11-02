@@ -27,7 +27,7 @@ export type GameType = 'tutorial'|
 'special_freeForAll'|
 'special_arcade';
 
-export type GameMode = 'conquest'|'battleRoyale'|'kingOfTheHill';
+export type GameMode = 'conquest'|'battleRoyale'|'kingOfTheHill'|'teamConquest';
 export type GamePlayerType = 'all'|'establishedPlayers';
 export type GamePlayerAnonymity = 'normal'|'extra';
 export type GamePlayerOnlineStatus = 'hidden'|'visible';
@@ -126,6 +126,7 @@ export interface GameSettings {
 		victoryCondition: GameVictoryCondition;
 		victoryPercentage: GameVictoryPercentage;
 		capitalStarElimination: GameSettingEnabledDisabled;
+		teamsCount?: number;
 	},
 	kingOfTheHill: {
 		productionCycles: number;
@@ -165,6 +166,7 @@ export interface GameSettings {
 		maxAlliances: number;
 		upkeepCost: GameAllianceUpkeepCost;
 		globalEvents: GameSettingEnabledDisabled;
+		lockedAlliances: GameSettingEnabledDisabled;
 	},
 	technology: {
 		startingTechnologyLevel: {
@@ -223,15 +225,22 @@ export interface GameSpectator {
 	playerIds: DBObjectId[];
 }
 
+export interface Team {
+	_id: DBObjectId;
+	name: string;
+	players: DBObjectId[];
+}
+
 export interface Game {
     _id: DBObjectId;
-    settings: GameSettings,
+    settings: GameSettings;
     galaxy: {
-        players: Player[]
+        players: Player[],
 		stars: Star[],
 		carriers: Carrier[],
 		homeStars?: DBObjectId[],
-		linkedStars: DBObjectId[][]
+		linkedStars: DBObjectId[][],
+		teams?: Team[],
 	},
 	conversations: Conversation[]
 	state: {
@@ -247,7 +256,9 @@ export interface Game {
 		starsForVictory: number;
 		players: number;
 		winner: DBObjectId | null;
+		winningTeam: DBObjectId | null;
 		leaderboard: DBObjectId[] | null;
+		teamLeaderboard: DBObjectId[] | null;
 		cleaned: boolean;
 		openSlots?: number;
 	},
